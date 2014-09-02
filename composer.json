@@ -11,21 +11,15 @@
   ],
   "minimum-stability": "dev",
   "license": "GPLv2",
-  "authors": [
-    {
-      "name": "Andy Potanin",
-      "homepage": "http://usabilitydynamics.com"
-    },
-    {
-      "name": "Reid Williams",
-      "homepage": "http://usabilitydynamics.com"
-    }
-  ],
+  "author": {
+    "name": "UsabilityDynamics, Inc.",
+    "homepage": "http://usabilitydynamics.com"
+  },
   "require": {
     "php": ">=5.3",
     "usabilitydynamics/lib-utility": "master"
   },
   "autoload": {
-    "classmap": [ "lib" ]
+    "classmap": [ "lib/classes" ]
   }
 }
