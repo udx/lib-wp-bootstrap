@@ -18,35 +18,8 @@ namespace UsabilityDynamics\WP {
      * @class Bootstrap
      * @author: potanin@UD
      */
-    class Bootstrap {
-
-      /**
-       * Plugin ( Theme ) Name.
-       *
-       * @public
-       * @property $name
-       * @type string
-       */
-      public $name = false;
+    class Bootstrap extends Scaffold {
     
-      /**
-       * Core version.
-       *
-       * @static
-       * @property $version
-       * @type {Object}
-       */
-      public $version = false;
-
-      /**
-       * Textdomain String
-       *
-       * @public
-       * @property domain
-       * @var string
-       */
-      public $domain = false;
-      
       /**
        * Schemas
        *
@@ -57,25 +30,24 @@ namespace UsabilityDynamics\WP {
       public $schemas = array();
 
       /**
-       * Errors
+       * Admin Notices handler object
        *
        * @public
-       * @static
-       * @property $errors
-       * @type array
+       * @property errors
+       * @var object UsabilityDynamics\WP\Errors object
        */
-      public $errors = array();
+      public $errors = false;
       
       /**
        * Singleton Instance Reference.
        *
-       * @private
+       * @protected
        * @static
        * @property $instance
        * @type \UsabilityDynamics\WPP\Bootstrap object
        */
       protected static $instance = null;
-
+      
       /**
        * Settings
        *
@@ -88,20 +60,30 @@ namespace UsabilityDynamics\WP {
       
       /**
        * Constructor
+       * Attention: MUST NOT BE CALLED DIRECTLY! USE get_instance() INSTEAD!
        *
        * @author peshkov@UD
        */
-      private function __construct( $args ) {
+      public function __construct( $args ) {
+        parent::__construct( $args );
+        //** Define our Admin Notices handler object */
+        $this->errors = new Errors( $args );
         //** Define schemas here since we can set correct paths directly in property */
         $this->define_schemas();
         //** Determine if Composer autoloader is included and modules classes are up to date */
-        $this->check_autoload_dependencies();
-        //** Application initialization. */
-        $this->init( $args );
-        //** The last step. Print errors if they exist */
-        if( !empty( $this->errors ) ) {
-          add_action( 'admin_notices', array( $this, 'admin_notices' ) );
-        }
+        $this->composer_dependencies();
+        //** Determine if plugin/theme requires or recommends another plugin(s) */
+        $this->plugins_dependencies();
+        //** Initialize plugin here. All plugin actions must be added on this step */
+        add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 11 );
+      }
+      
+      /**
+       * Determine if errors exist
+       * Just wrapper.
+       */
+      public function has_errors() {
+        return $this->errors->has_errors();
       }
       
       /**
@@ -111,27 +93,81 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       public function init() {}
-
+      
+      /**
+       * Initialize application.
+       * Redeclare the method in child class!
+       *
+       * @author peshkov@UD
+       */
+      public function plugins_loaded() {
+        $is_tgma = $this->is_tgma;
+        if( $is_tgma ) {
+          $tgma = TGM_Plugin_Activation::get_instance();
+          $notices = $tgma->notices();
+          
+          //echo "<pre>"; var_dump( $notices ); echo "</pre>"; die();
+        }
+        //** Application initialization. */
+        $this->init();
+      }
+      
       /**
        * Defines property schemas ( $this->schemas )
        * The list of pathes to schemas files must be set if needed.
        * Redeclare the method in child class!
        * 
        */
-      public function define_schemas() {}
+      public function define_schemas() {
+        $this->schemas = array(
+          //**  */
+          'dependencies' => false,
+          //**  */
+          'plugins' => false,
+        );
+      }
       
       /**
        * Determine if instance already exists and Return Instance
+       *
+       * Attention: The method MUST be called from plugin core file at first to set correct path to plugin!
        *
        * @author peshkov@UD
        */
       public static function get_instance( $args = array() ) {
         $class = get_called_class();
-        if( null === $class::$instance ) {
-          $class::$instance = new $class( $args );
+        if( null === $class::$instance ) {        
+          $dbt = debug_backtrace();
+          if( !empty( $dbt[0]['file'] ) && file_exists( $dbt[0]['file'] ) ) {
+            $pd = get_file_data( $dbt[0]['file'], array(
+              'name' => 'Plugin Name',
+              'version' => 'Version',
+              'domain' => 'Text Domain',
+            ), 'plugin' );
+            $args = array_merge( (array)$pd, (array)$args );
+            $class::$instance = new $class( $args );
+            //** Register activation hook */
+            register_activation_hook( $dbt[0]['file'], array( $class::$instance, 'activate' ) );
+            //** Register activation hook */
+            register_deactivation_hook( $dbt[0]['file'], array( $class::$instance, 'deactivate' ) );
+          } else {
+            $class::$instance = new $class( $args );
+          }
         }
         return $class::$instance;
       }
+      
+      /**
+       * Plugin Activation
+       * Redeclare the method in child class!
+       */
+      public function activate() {}
+      
+      /**
+       * Plugin Deactivation
+       * Redeclare the method in child class!
+       */
+      public function deactivate() {}
       
       /**
        * @param string $key
@@ -177,15 +213,23 @@ namespace UsabilityDynamics\WP {
       }
       
       /**
-       * Renders admin notes in case there are errors on bootstrap init
+       * Determine if plugin/theme requires or recommends another plugin(s)
        *
        * @author peshkov@UD
        */
-      public function admin_notices() {
-        if( !empty( $this->errors ) && is_array( $this->errors ) ) {
-          $errors = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $this->errors ) . '</li></ul>';
-          $message = sprintf( __( '<p><b>%s</b> is not active due to following errors:</p> %s' ), $this->name, $errors );
-          echo '<div class="error fade" style="padding:11px;">' . $message . '</div>';
+      private function plugins_dependencies() {
+        //** Determine if schema is set */
+        if( empty( $this->schemas[ 'plugins' ] ) ) {
+          return null;
+        }
+        $plugins = $this->get_schema( $this->schemas[ 'plugins' ] );
+        if( !empty( $plugins ) && is_array( $plugins ) ) {
+          $tgma = TGM_Plugin_Activation::get_instance();
+          foreach( $plugins as $plugin ) {
+            $plugin[ '_referrer' ] = get_class( $this );
+            $tgma->register( $plugin );
+          }
+          $this->is_tgma = true;
         }
       }
       
@@ -193,9 +237,8 @@ namespace UsabilityDynamics\WP {
        * Maybe determines if Composer autoloader is included and modules classes are up to date
        *
        * @author peshkov@UD
-       * @return boolean
        */
-      private function check_autoload_dependencies() {
+      private function composer_dependencies() {
         //** Determine if schema is set */
         if( empty( $this->schemas[ 'dependencies' ] ) ) {
           return null;
@@ -206,10 +249,10 @@ namespace UsabilityDynamics\WP {
             if( !empty( $classes ) && is_array( $classes ) ) {
               foreach( $classes as $class => $v ) {
                 if( !class_exists( $class ) ) {
-                  $this->errors[] = sprintf( __( 'Module <b>%s</b> is not installed or the version is old, class <b>%s</b> does not exist.' ), $module, $class );
+                  $this->errors->set( sprintf( __( 'Module <b>%s</b> is not installed or the version is old, class <b>%s</b> does not exist.', $this->domain ), $module, $class ) );
                 }
                 if ( '*' != trim( $v ) && ( !property_exists( $class, 'version' ) || $class::$version < $v ) ) {
-                  $this->errors[] = sprintf( __( 'Module <b>%s</b> should be updated to the latest version, class <b>%s</b> must have version <b>%s</b> or higher.' ), $module, $class, $v );
+                  $this->errors->set( sprintf( __( 'Module <b>%s</b> should be updated to the latest version, class <b>%s</b> must have version <b>%s</b> or higher.', $this->domain ), $module, $class, $v ) );
                 }
               }
             }
