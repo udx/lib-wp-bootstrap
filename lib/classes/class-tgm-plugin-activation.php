@@ -139,6 +139,17 @@ namespace UsabilityDynamics\WP {
           public $strings = array();
 
           /**
+           * Error Notice types.
+           *
+           * @var array
+           */
+          public $error_types = array(
+            'notice_can_install_required',
+            'notice_can_activate_required',
+            'notice_ask_to_update',
+          );
+          
+          /**
            * Holds the version of WordPress.
            *
            * @since 2.4.0
@@ -156,21 +167,19 @@ namespace UsabilityDynamics\WP {
            * @see TGM_Plugin_Activation::init()
            */
           private function __construct() {
-
-              self::$instance = $this;
-
+              
               $this->strings = array(
                   'page_title'                     => __( 'Install Required Plugins', 'tgmpa' ),
                   'menu_title'                     => __( 'Install Plugins', 'tgmpa' ),
                   'installing'                     => __( 'Installing Plugin: %s', 'tgmpa' ),
                   'oops'                           => __( 'Something went wrong.', 'tgmpa' ),
-                  'notice_can_install_required'    => _n_noop( 'This theme requires the following plugin: %1$s.', 'This theme requires the following plugins: %1$s.' ),
-                  'notice_can_install_recommended' => _n_noop( 'This theme recommends the following plugin: %1$s.', 'This theme recommends the following plugins: %1$s.' ),
+                  'notice_can_install_required'    => _n_noop( '%2$s requires the following plugin: %1$s.', '%2$s requires the following plugins: %1$s.' ),
+                  'notice_can_install_recommended' => _n_noop( '%2$s recommends the following plugin: %1$s.', '%2$s recommends the following plugins: %1$s.' ),
                   'notice_cannot_install'          => _n_noop( 'Sorry, but you do not have the correct permissions to install the %s plugin. Contact the administrator of this site for help on getting the plugin installed.', 'Sorry, but you do not have the correct permissions to install the %s plugins. Contact the administrator of this site for help on getting the plugins installed.' ),
                   'notice_can_activate_required'   => _n_noop( 'The following required plugin is currently inactive: %1$s.', 'The following required plugins are currently inactive: %1$s.' ),
                   'notice_can_activate_recommended'=> _n_noop( 'The following recommended plugin is currently inactive: %1$s.', 'The following recommended plugins are currently inactive: %1$s.' ),
                   'notice_cannot_activate'         => _n_noop( 'Sorry, but you do not have the correct permissions to activate the %s plugin. Contact the administrator of this site for help on getting the plugin activated.', 'Sorry, but you do not have the correct permissions to activate the %s plugins. Contact the administrator of this site for help on getting the plugins activated.' ),
-                  'notice_ask_to_update'           => _n_noop( 'The following plugin needs to be updated to its latest version to ensure maximum compatibility with this theme: %1$s.', 'The following plugins need to be updated to their latest version to ensure maximum compatibility with this theme: %1$s.' ),
+                  'notice_ask_to_update'           => _n_noop( 'The following plugin needs to be updated to its latest version to ensure maximum compatibility with %2$s: %1$s.', 'The following plugins need to be updated to their latest version to ensure maximum compatibility with %2$s: %1$s.' ),
                   'notice_cannot_update'           => _n_noop( 'Sorry, but you do not have the correct permissions to update the %s plugin. Contact the administrator of this site for help on getting the plugin updated.', 'Sorry, but you do not have the correct permissions to update the %s plugins. Contact the administrator of this site for help on getting the plugins updated.' ),
                   'install_link'                   => _n_noop( 'Begin installing plugin', 'Begin installing plugins' ),
                   'activate_link'                  => _n_noop( 'Begin activating plugin', 'Begin activating plugins' ),
@@ -583,27 +592,33 @@ namespace UsabilityDynamics\WP {
            * @return null Returns early if we're on the Install page.
            */
           public function notices( $referrer = false ) {
-              global $current_screen;
 
-              // Remove nag on the install page.
+              //** Remove nag on the install page. */
               if ( $this->is_tgmpa_page() || empty( $referrer ) ) {
                   return array();
               }
-
-              // Return early if the nag message has been dismissed.
-              //if ( get_user_meta( get_current_user_id(), 'tgmpa_dismissed_notice', true ) ) {
-              //    return array();
-              //}
-
-              $installed_plugins = get_plugins(); // Retrieve a list of all the plugins
+              
+              //** Check if get_plugins() function exists. This is required on the front end of the */
+              //** site, since it is in a file that is normally only loaded in the admin. */
+              if ( ! function_exists( 'get_plugins' ) ) {
+                require_once ABSPATH . 'wp-admin/includes/plugin.php';
+              }
+              
+              $installed_plugins = \get_plugins(); // Retrieve a list of all the plugins
               $this->populate_file_path();
 
               $message             = array(); // Store the messages in an array to be outputted after plugins have looped through.
-              $install_link        = false;   // Set to false, change to true in loop if conditions exist, used for action link 'install'.
-              $install_link_count  = 0;       // Used to determine plurality of install action link text.
-              $activate_link       = false;   // Set to false, change to true in loop if conditions exist, used for action link 'activate'.
-              $activate_link_count = 0;       // Used to determine plurality of activate action link text.
+              
+              $e_install_link        = false;   // Set to false, change to true in loop if conditions exist, used for action link 'install'.
+              $e_install_link_count  = 0;       // Used to determine plurality of install action link text.
+              $e_activate_link       = false;   // Set to false, change to true in loop if conditions exist, used for action link 'activate'.
+              $e_activate_link_count = 0;       // Used to determine plurality of activate action link text.
 
+              $m_install_link        = false;   // Set to false, change to true in loop if conditions exist, used for action link 'install'.
+              $m_install_link_count  = 0;       // Used to determine plurality of install action link text.
+              $m_activate_link       = false;   // Set to false, change to true in loop if conditions exist, used for action link 'activate'.
+              $m_activate_link_count = 0;       // Used to determine plurality of activate action link text.
+              
               foreach ( $this->plugins as $plugin ) {
                   //** We must return only notices for referrer */
                   if( empty( $referrer ) &&  $referrer != $plugin[ '_referrer' ] ) {
@@ -617,9 +632,9 @@ namespace UsabilityDynamics\WP {
                               // If the current version is less than the minimum required version, we display a message.
                               if ( version_compare( $installed_plugins[$plugin['file_path']]['Version'], $plugin['version'], '<' ) ) {
                                   if ( current_user_can( 'install_plugins' ) ) {
-                                      $message['notice_ask_to_update'][] = $plugin['name'];
+                                      $message['notice_ask_to_update'][] = $plugin;
                                   } else {
-                                      $message['notice_cannot_update'][] = $plugin['name'];
+                                      $message['notice_cannot_update'][] = $plugin;
                                   }
                               }
                           }
@@ -636,54 +651,56 @@ namespace UsabilityDynamics\WP {
 
                   // Not installed.
                   if ( ! isset( $installed_plugins[$plugin['file_path']] ) ) {
-                      $install_link = true; // We need to display the 'install' action link.
-                      $install_link_count++; // Increment the install link count.
                       if ( current_user_can( 'install_plugins' ) ) {
                           if ( $plugin['required'] ) {
-                              $message['notice_can_install_required'][] = $plugin['name'];
+                            $e_install_link = true; // We need to display the 'install' action link.
+                            $e_install_link_count++; // Increment the install link count.
+                            $message['notice_can_install_required'][] = $plugin;
                           }
                           // This plugin is only recommended.
                           else {
-                              $message['notice_can_install_recommended'][] = $plugin['name'];
+                            $m_install_link = true; // We need to display the 'install' action link.
+                            $m_install_link_count++; // Increment the install link count.
+                            $message['notice_can_install_recommended'][] = $plugin;
                           }
                       }
                       // Need higher privileges to install the plugin.
                       else {
-                          $message['notice_cannot_install'][] = $plugin['name'];
+                          $message['notice_cannot_install'][] = $plugin;
                       }
                   }
                   // Installed but not active.
                   elseif ( is_plugin_inactive( $plugin['file_path'] ) ) {
-                      $activate_link = true; // We need to display the 'activate' action link.
-                      $activate_link_count++; // Increment the activate link count.
                       if ( current_user_can( 'activate_plugins' ) ) {
                           if ( isset( $plugin['required'] ) && $plugin['required'] ) {
-                              $message['notice_can_activate_required'][] = $plugin['name'];
+                            $e_activate_link = true; // We need to display the 'activate' action link.
+                            $e_activate_link_count++; // Increment the activate link count.
+                            $message['notice_can_activate_required'][] = $plugin;
                           }
                           // This plugin is only recommended.
                           else {
-                              $message['notice_can_activate_recommended'][] = $plugin['name'];
+                            $m_activate_link = true; // We need to display the 'activate' action link.
+                            $m_activate_link_count++; // Increment the activate link count.
+                            $message['notice_can_activate_recommended'][] = $plugin;
                           }
                       }
                       // Need higher privileges to activate the plugin.
                       else {
-                          $message['notice_cannot_activate'][] = $plugin['name'];
+                          $message['notice_cannot_activate'][] = $plugin;
                       }
                   }
               }
               
-              return $message;
+              //return $message;
 
+              $prepared = array();
+              
               // If we have notices to display, we move forward.
               if ( ! empty( $message ) ) {
                   krsort( $message ); // Sort messages.
-                  $rendered = ''; // Display all nag messages as strings.
 
-                  // If dismissable is false and a message is set, output it now.
-                  if ( ! $this->dismissable && ! empty( $this->dismiss_msg ) ) {
-                      $rendered .= '<p><strong>' . wp_kses_post( $this->dismiss_msg ) . '</strong></p>';
-                  }
-
+                  //echo "<pre>"; print_r( $message ); echo "</pre>"; die();
+                  
                   // Grab all plugin names.
                   foreach ( $message as $type => $plugin_groups ) {
                       $linked_plugin_groups = array();
@@ -692,7 +709,8 @@ namespace UsabilityDynamics\WP {
                       $count = count( $plugin_groups );
 
                       // Loop through the plugin names to make the ones pulled from the .org repo linked.
-                      foreach ( $plugin_groups as $plugin_group_single_name ) {
+                      foreach ( $plugin_groups as $plugin ) {
+                          $plugin_group_single_name = $plugin[ 'name' ];
                           $external_url = $this->_get_plugin_data_from_name( $plugin_group_single_name, 'external_url' );
                           $source       = $this->_get_plugin_data_from_name( $plugin_group_single_name, 'source' );
 
@@ -724,45 +742,36 @@ namespace UsabilityDynamics\WP {
 
                       $last_plugin = array_pop( $plugin_groups ); // Pop off last name to prep for readability.
                       $imploded    = empty( $plugin_groups ) ? '<em>' . $last_plugin . '</em>' : '<em>' . ( implode( ', ', $plugin_groups ) . '</em> and <em>' . $last_plugin . '</em>' );
-
-                      $rendered .= '<p>' . sprintf( translate_nooped_plural( $this->strings[$type], $count, 'tgmpa' ), $imploded, $count ) . '</p>';
+                      
+                      $prepared['messages'][] = array(
+                        'type' => ( in_array( $type, $this->error_types ) ? 'error' : 'message' ),
+                        'value' => sprintf( translate_nooped_plural( $this->strings[$type], $count, 'tgmpa' ), $imploded, $plugin[ '_referrer_name' ], $count ),
+                      );
+                      
                   }
-
-                  // Setup variables to determine if action links are needed.
-                  $show_install_link  = $install_link ? '<a href="' . add_query_arg( 'page', $this->menu, network_admin_url( 'themes.php' ) ) . '">' . translate_nooped_plural( $this->strings['install_link'], $install_link_count, 'tgmpa' ) . '</a>' : '';
-                  $show_activate_link = $activate_link ? '<a href="' . add_query_arg( 'page', $this->menu, network_admin_url( 'themes.php' ) ) . '">' . translate_nooped_plural( $this->strings['activate_link'], $activate_link_count, 'tgmpa' ) . '</a>'  : '';
-
-                  // Define all of the action links.
-                  $action_links = apply_filters(
-                      'ud_notice_action_links',
-                      array(
-                          'install'  => ( current_user_can( 'install_plugins' ) )  ? $show_install_link  : '',
-                          'activate' => ( current_user_can( 'activate_plugins' ) ) ? $show_activate_link : '',
-                          //'dismiss'  => $this->dismissable ? '<a class="dismiss-notice" href="' . add_query_arg( 'tgmpa-dismiss', 'dismiss_admin_notices' ) . '" target="_parent">' . $this->strings['dismiss'] . '</a>' : '',
-                      )
+                  
+                  //** Setup variables to determine if action links are needed. */
+                  $e_show_install_link  = $e_install_link ? '<a href="' . add_query_arg( 'page', $this->menu, network_admin_url( 'themes.php' ) ) . '">' . translate_nooped_plural( $this->strings['install_link'], $e_install_link_count, 'tgmpa' ) . '</a>' : '';
+                  $e_show_activate_link = $e_activate_link ? '<a href="' . add_query_arg( 'page', $this->menu, network_admin_url( 'themes.php' ) ) . '">' . translate_nooped_plural( $this->strings['activate_link'], $e_activate_link_count, 'tgmpa' ) . '</a>'  : '';
+                  
+                  $m_show_install_link  = $m_install_link ? '<a href="' . add_query_arg( 'page', $this->menu, network_admin_url( 'themes.php' ) ) . '">' . translate_nooped_plural( $this->strings['install_link'], $m_install_link_count, 'tgmpa' ) . '</a>' : '';
+                  $m_show_activate_link = $m_activate_link ? '<a href="' . add_query_arg( 'page', $this->menu, network_admin_url( 'themes.php' ) ) . '">' . translate_nooped_plural( $this->strings['activate_link'], $m_activate_link_count, 'tgmpa' ) . '</a>'  : '';
+                  
+                  //** Define all of the action links. */
+                  $prepared[ 'links' ] = array(
+                    'error' => array_filter( array(
+                      'install'  => ( current_user_can( 'install_plugins' ) )  ? $e_show_install_link  : false,
+                      'activate' => ( current_user_can( 'activate_plugins' ) ) ? $e_show_activate_link : false,
+                    ) ),
+                    'message' => array_filter( array(
+                      'install'  => ( current_user_can( 'install_plugins' ) )  ? $m_show_install_link  : false,
+                      'activate' => ( current_user_can( 'activate_plugins' ) ) ? $m_show_activate_link : false,
+                    ) ),
                   );
-
-                  $action_links = array_filter( $action_links ); // Remove any empty array items.
-                  if ( $action_links ) {
-                      $rendered .= '<p>' . implode( ' | ', $action_links ) . '</p>';
-                  }
-
-                  // Register the nag messages and prepare them to be processed.
-                  $nag_class = version_compare( $this->wp_version, '3.8', '<' ) ? 'updated' : 'update-nag';
-                  if ( ! empty( $this->strings['nag_type'] ) ) {
-                      add_settings_error( 'udpa', 'udpa', $rendered, sanitize_html_class( strtolower( $this->strings['nag_type'] ) ) );
-                  } else {
-                      add_settings_error( 'udpa', 'udpa', $rendered, $nag_class );
-                  }
               }
-
-              // Admin options pages already output settings_errors, so this is to avoid duplication.
-              if ( 'options-general' !== $current_screen->parent_base ) {
-                  settings_errors( 'udpa' );
-              }
-
+              return $prepared;
           }
-
+          
           /**
            * Add dismissable admin notices.
            *

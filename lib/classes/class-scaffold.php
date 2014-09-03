@@ -72,7 +72,7 @@ namespace UsabilityDynamics\WP {
        *
        */
       public function __get( $key ) {
-        return $this->_properties[ $key ];
+        return isset( $this->_properties[ $key ] ) ? $this->_properties[ $key ] : NULL;
       }
 
       /**

@@ -101,12 +101,30 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       public function plugins_loaded() {
+        //** Determine if we have TGMA Plugin Activation initialized. */
         $is_tgma = $this->is_tgma;
         if( $is_tgma ) {
           $tgma = TGM_Plugin_Activation::get_instance();
-          $notices = $tgma->notices();
-          
-          //echo "<pre>"; var_dump( $notices ); echo "</pre>"; die();
+          //** Maybe get TGMPA notices. */
+          $notices = $tgma->notices( get_class( $this ) );
+          if( !empty( $notices[ 'messages' ] ) && is_array( $notices[ 'messages' ] ) ) {
+            $error_links = false;
+            $message_links = false;
+            foreach( $notices[ 'messages' ] as $m ) {
+              if( $m[ 'type' ] == 'error' ) $error_links = true;
+              elseif( $m[ 'type' ] == 'message' ) $message_links = true;
+              $this->errors->add( $m[ 'value' ], $m[ 'type' ] );
+            }
+            //** Maybe add footer action links to errors and|or notices block. */
+            if( !empty( $notices[ 'links' ] ) && is_array( $notices[ 'links' ] ) ) {
+              foreach( $notices[ 'links' ] as $type => $links ) {
+                foreach( $links as $link ) {
+                  $this->errors->add_action_link( $link, $type );
+                }
+              }
+            }
+          }
+          //echo "<pre>"; print_r( $notices ); echo "</pre>"; die();
         }
         //** Application initialization. */
         $this->init();
@@ -227,6 +245,7 @@ namespace UsabilityDynamics\WP {
           $tgma = TGM_Plugin_Activation::get_instance();
           foreach( $plugins as $plugin ) {
             $plugin[ '_referrer' ] = get_class( $this );
+            $plugin[ '_referrer_name' ] = $this->name;
             $tgma->register( $plugin );
           }
           $this->is_tgma = true;
@@ -249,10 +268,10 @@ namespace UsabilityDynamics\WP {
             if( !empty( $classes ) && is_array( $classes ) ) {
               foreach( $classes as $class => $v ) {
                 if( !class_exists( $class ) ) {
-                  $this->errors->set( sprintf( __( 'Module <b>%s</b> is not installed or the version is old, class <b>%s</b> does not exist.', $this->domain ), $module, $class ) );
+                  $this->errors->add( sprintf( __( 'Module <b>%s</b> is not installed or the version is old, class <b>%s</b> does not exist.', $this->domain ), $module, $class ) );
                 }
                 if ( '*' != trim( $v ) && ( !property_exists( $class, 'version' ) || $class::$version < $v ) ) {
-                  $this->errors->set( sprintf( __( 'Module <b>%s</b> should be updated to the latest version, class <b>%s</b> must have version <b>%s</b> or higher.', $this->domain ), $module, $class, $v ) );
+                  $this->errors->add( sprintf( __( 'Module <b>%s</b> should be updated to the latest version, class <b>%s</b> must have version <b>%s</b> or higher.', $this->domain ), $module, $class, $v ) );
                 }
               }
             }
