@@ -46,7 +46,7 @@ namespace UsabilityDynamics\WP {
        * @property $instance
        * @type \UsabilityDynamics\WPP\Bootstrap object
        */
-      protected static $instance = null;
+      //protected static $instance = null;
       
       /**
        * Settings
@@ -154,7 +154,15 @@ namespace UsabilityDynamics\WP {
        */
       public static function get_instance( $args = array() ) {
         $class = get_called_class();
-        if( null === $class::$instance ) {        
+        //** We must be sure that final class contains static property $instance to prevent issues. */
+        if( !property_exists( $class, 'instance' ) ) {
+          exit( "{$class} must have property \$instance" );
+        }
+        $prop = new \ReflectionProperty( $class, 'instance' );
+        if( !$prop->isStatic() ) {
+          exit( "Property \$instance must be <b>static</b> for {$class}" );
+        }
+        if( null === $class::$instance ) {    
           $dbt = debug_backtrace();
           if( !empty( $dbt[0]['file'] ) && file_exists( $dbt[0]['file'] ) ) {
             $pd = get_file_data( $dbt[0]['file'], array(
@@ -162,7 +170,9 @@ namespace UsabilityDynamics\WP {
               'version' => 'Version',
               'domain' => 'Text Domain',
             ), 'plugin' );
-            $args = array_merge( (array)$pd, (array)$args );
+            $args = array_merge( (array)$pd, (array)$args, array(
+              'plugin_file' => $dbt[0]['file'],
+            ) );
             $class::$instance = new $class( $args );
             //** Register activation hook */
             register_activation_hook( $dbt[0]['file'], array( $class::$instance, 'activate' ) );
