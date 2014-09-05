@@ -27,15 +27,15 @@ namespace UsabilityDynamics\WP {
        * @type string
        */
       public $name = false;
-    
+      
       /**
-       * Core version.
+       * Slug.
        *
-       * @static
-       * @property $version
-       * @type {Object}
+       * @public
+       * @property $plugin
+       * @type string
        */
-      public $version = false;
+      public $plugin = false;
 
       /**
        * Textdomain String
@@ -63,7 +63,7 @@ namespace UsabilityDynamics\WP {
       public function __construct( $args = array() ) {
         //** Setup our plugin's data */
         $this->name = isset( $args[ 'name' ] ) ? trim( $args[ 'name' ] ) : false;
-        $this->version = isset( $args[ 'version' ] ) ? trim( $args[ 'version' ] ) : false;
+        $this->plugin = sanitize_key( $this->name );
         $this->domain = isset( $args[ 'domain' ] ) ? trim( $args[ 'domain' ] ) : false;
         $this->args = $args;
       }
