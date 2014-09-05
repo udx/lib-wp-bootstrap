@@ -20,6 +20,15 @@ namespace UsabilityDynamics\WP {
     abstract class Scaffold {
     
       /**
+       * Absolute Path to Plugin Main File
+       *
+       * @public
+       * @property plugin_path
+       * @var array
+       */
+      public $plugin_file = false;
+    
+      /**
        * Plugin ( Theme ) Name.
        *
        * @public
@@ -65,6 +74,7 @@ namespace UsabilityDynamics\WP {
         $this->name = isset( $args[ 'name' ] ) ? trim( $args[ 'name' ] ) : false;
         $this->plugin = sanitize_key( $this->name );
         $this->domain = isset( $args[ 'domain' ] ) ? trim( $args[ 'domain' ] ) : false;
+        $this->plugin_file = isset( $args[ 'plugin_file' ] ) ? trim( $args[ 'plugin_file' ] ) : false;
         $this->args = $args;
       }
       
