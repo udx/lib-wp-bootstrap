@@ -199,7 +199,7 @@ namespace UsabilityDynamics\WP {
               do_action_ref_array( 'tgmpa_init', array( $this ) );
 
               // When the rest of WP has loaded, kick-start the rest of the class.
-              add_action( 'plugins_loaded', array( $this, 'init' ) );
+              add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 
           }
 

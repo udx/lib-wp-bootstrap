@@ -119,6 +119,15 @@ namespace UsabilityDynamics\WP {
       public function admin_notices() {
         global $wp_version;
         
+        //** Don't show the message if the user isn't an administrator. */
+        if ( ! current_user_can( 'manage_options' ) ) { 
+          return;
+        }
+        //** Don't show the message if on a multisite and the user isn't a super user. */
+        if ( is_multisite() && ! is_super_admin() ) {
+          return;
+        } 
+        
         if( !empty( $this->errors ) || !empty( $this->messages ) ) {
           echo "<style>.ud-admin-notice a { text-decoration: underline !important; }</style>";
         }

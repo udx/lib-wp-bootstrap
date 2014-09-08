@@ -74,8 +74,10 @@ namespace UsabilityDynamics\WP {
         $this->composer_dependencies();
         //** Determine if plugin/theme requires or recommends another plugin(s) */
         $this->plugins_dependencies();
+        //** Add additional conditions on 'plugins_loaded' action before we start plugin initialization. */
+        add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
         //** Initialize plugin here. All plugin actions must be added on this step */
-        add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 11 );
+        add_action( 'plugins_loaded', array( $this, 'init' ), 100 );
       }
       
       /**
@@ -127,8 +129,6 @@ namespace UsabilityDynamics\WP {
         }
         //** Maybe define license manager */
         $this->define_license_manager();
-        //** Application initialization. */
-        $this->init();
       }
       
       /**
