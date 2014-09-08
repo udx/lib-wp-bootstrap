@@ -124,8 +124,9 @@ namespace UsabilityDynamics\WP {
               }
             }
           }
-          //echo "<pre>"; print_r( $notices ); echo "</pre>"; die();
         }
+        //** Maybe define license manager */
+        $this->define_license_manager();
         //** Application initialization. */
         $this->init();
       }
@@ -238,6 +239,38 @@ namespace UsabilityDynamics\WP {
           return (array)\UsabilityDynamics\Utility::l10n_localize( json_decode( file_get_contents( $file ), true ), (array)$l10n );
         }
         return array();
+      }
+      
+      /**
+       * Defines License Manager if 'license' schema is set
+       *
+       * @author peshkov@UD
+       */
+      protected function define_license_manager() {
+        //** Break if we already have errors to prevent fatal ones. */
+        if( $this->has_errors() ) {
+          return false;
+        }
+        //** Be sure we have license scheme to continue */
+        if( empty( $this->schemas[ 'license' ] ) ) {
+          return false;
+        }
+        $schema = $this->get_schema( $this->schemas[ 'license' ] );
+        if( empty( $schema[ 'product_id' ] ) || empty( $schema[ 'referrer' ] ) ) {
+          $this->errors->add( __( 'Product requires license, but product ID and (or) referrer is undefined. Please, be sure, that license schema has all required data.', $this->domain ) );
+        }
+        $schema = array_merge( (array)$schema, array( 
+          'plugin_name' => $this->name,
+          'plugin_file' => $this->plugin_file,
+          'errors_callback' => array( $this->errors, 'add' )
+        ) );
+        //** Licenses Manager */
+        if( !class_exists( '\UsabilityDynamics\UD_API\Manager' ) ) {
+          $this->errors->add( __( 'Class \UsabilityDynamics\UD_API\Manager does not exist. Be sure all required plugins installed and activated.', $this->domain ) );
+          return false;
+        }
+        $this->license_manager = new \UsabilityDynamics\UD_API\Manager( $schema );
+        return true;
       }
       
       /**
