@@ -74,6 +74,8 @@ namespace UsabilityDynamics\WP {
         $this->composer_dependencies();
         //** Determine if plugin/theme requires or recommends another plugin(s) */
         $this->plugins_dependencies();
+        //** Maybe define license client */
+        $this->define_license_client();
         //** Add additional conditions on 'plugins_loaded' action before we start plugin initialization. */
         add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
         //** Initialize plugin here. All plugin actions must be added on this step */
@@ -136,13 +138,18 @@ namespace UsabilityDynamics\WP {
        * The list of pathes to schemas files must be set if needed.
        * Redeclare the method in child class!
        * 
+       * The list of available schemas
        */
       public function define_schemas() {
         $this->schemas = array(
-          //**  */
+          //** Composer Classes versions dependencies */
           'dependencies' => false,
-          //**  */
+          //** Plugins Dependencies. The list of required, recommend plugins, plugins versions */
           'plugins' => false,
+          //** License Manager settings. Product ID, referrer ( required plugin ) */
+          'license' => false,
+          //** Licenses Client settings. Screen configuration. */
+          'licenses' => false,
         );
       }
       
@@ -173,6 +180,7 @@ namespace UsabilityDynamics\WP {
             ), 'plugin' );
             $args = array_merge( (array)$pd, (array)$args, array(
               'plugin_file' => $dbt[0]['file'],
+              'plugin_url' => plugin_dir_url( $dbt[0]['file'] ),
             ) );
             $class::$instance = new $class( $args );
             //** Register activation hook */
@@ -234,11 +242,63 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        * @return array
        */
-      public static function get_schema( $file = '', $l10n = array() ) {
+      public function get_schema( $file = '', $l10n = array() ) {
         if( !empty( $file ) && file_exists( $file ) ) {
+          $l10n = empty( $l10n ) ? $this->get_localization() : $l10n;
           return (array)\UsabilityDynamics\Utility::l10n_localize( json_decode( file_get_contents( $file ), true ), (array)$l10n );
         }
         return array();
+      }
+      
+      /**
+       * Return localization's list.
+       *
+       * Example:
+       * If schema contains l10n.{key} values:
+       *
+       * { 'config': 'l10n.hello_world' }
+       *
+       * the current function should return something below:
+       *
+       * return array(
+       *   'hello_world' => __( 'Hello World', $this->domain ),
+       * );
+       *
+       * @author peshkov@UD
+       * @return array
+       */
+      public function get_localization() {
+        return array();
+      }
+      
+      /**
+       * Defines License Client if 'licenses' schema is set
+       *
+       * @author peshkov@UD
+       */
+      protected function define_license_client() {
+        //** Break if we already have errors to prevent fatal ones. */
+        if( $this->has_errors() ) {
+          return false;
+        }
+        //** Be sure we have licenses scheme to continue */
+        if( empty( $this->schemas[ 'licenses' ] ) ) {
+          return false;
+        }
+        $schema = $this->get_schema( $this->schemas[ 'licenses' ] );
+        //** Licenses Manager */
+        if( !class_exists( '\UsabilityDynamics\UD_API\Bootstrap' ) ) {
+          $this->errors->add( __( 'Class \UsabilityDynamics\UD_API\Bootstrap does not exist. Be sure all required plugins and (or) composer modules installed and activated.', $this->domain ) );
+          return false;
+        }
+        $args = $this->args;
+        $args = array_merge( $args, $schema, array( 
+          'errors_callback' => array( $this->errors, 'add' ),
+        ) );
+        if( empty( $args[ 'screen' ] ) ) {
+          $this->errors->add( __( 'Licenses client can not be activated due to invalid \'licenses\' schema.', $this->domain ) );
+        }
+        $this->client = new \UsabilityDynamics\UD_API\Bootstrap( $args );
       }
       
       /**
