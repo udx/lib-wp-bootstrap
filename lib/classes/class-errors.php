@@ -126,16 +126,19 @@ namespace UsabilityDynamics\WP {
         //** Don't show the message if on a multisite and the user isn't a super user. */
         if ( is_multisite() && ! is_super_admin() ) {
           return;
-        } 
+        }
         
-        if( !empty( $this->errors ) || !empty( $this->messages ) ) {
+        $errors = apply_filters( 'ud:errors:admin_notices', $this->errors );
+        $messages = apply_filters( 'ud:messages:admin_notices', $this->messages );
+        
+        if( !empty( $errors ) || !empty( $messages ) ) {
           echo "<style>.ud-admin-notice a { text-decoration: underline !important; }</style>";
         }
         
         //** Errors Block */
-        if( !empty( $this->errors ) && is_array( $this->errors ) ) {
-          $errors = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $this->errors ) . '</li></ul>';
-          $message = sprintf( __( '<p><b>%s</b> is not active due to following errors:</p> %s', $this->domain ), $this->name, $errors );
+        if( !empty( $errors ) && is_array( $errors ) ) {
+          $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $errors ) . '</li></ul>';
+          $message = sprintf( __( '<p><b>%s</b> is not active due to following errors:</p> %s', $this->domain ), $this->name, $message );
           if( !empty( $this->action_links[ 'errors' ] ) && is_array( $this->action_links[ 'errors' ] ) ) {
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'errors' ] ) . '</p>';
           }
@@ -146,12 +149,12 @@ namespace UsabilityDynamics\WP {
         $dismiss_timer = get_user_meta( get_current_user_id(), ( 'dismissed_notice_' . sanitize_key( $this->name ) ), false );
         if ( !$dismiss_timer || ( time() - (int)$dismiss_timer ) >= 604800 ) {
           //** Notices Block */
-          if( !empty( $this->messages ) && is_array( $this->messages ) ) {
-            $messages = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $this->messages ) . '</li></ul>';
+          if( !empty( $messages ) && is_array( $messages ) ) {
+            $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $messages ) . '</li></ul>';
             if( !empty( $errors ) ) {
-              $message = sprintf( __( '<p><b>%s</b> has the following additional notices:</p> %s', $this->domain ), $this->name, $messages );
+              $message = sprintf( __( '<p><b>%s</b> has the following additional notices:</p> %s', $this->domain ), $this->name, $message );
             } else {
-              $message = sprintf( __( '<p><b>%s</b> is active, but has the following notices:</p> %s', $this->domain ), $this->name, $messages );
+              $message = sprintf( __( '<p><b>%s</b> is active, but has the following notices:</p> %s', $this->domain ), $this->name, $message );
             }
             $this->action_links[ 'messages' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-' . sanitize_key( $this->name ), 'dismiss_admin_notices' ) . '" target="_parent">' . __( 'Dismiss this notice', $this->domain ) . '</a>';
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'messages' ] ) . '</p>';
