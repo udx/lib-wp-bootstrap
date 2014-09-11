@@ -4,9 +4,7 @@
  *
  * @namespace UsabilityDynamics
  *
- * This file can be used to bootstrap any of the UD plugins, it essentially requires that you have
- * a core file which will be called after 'plugins_loaded'. In addition, if the core class has
- * 'activate' and 'deactivate' functions, then those will be called automatically by this class.
+ * This file can be used to bootstrap any of the UD plugins.
  */
 namespace UsabilityDynamics\WP {
 
@@ -19,6 +17,8 @@ namespace UsabilityDynamics\WP {
      * @author: potanin@UD
      */
     class Bootstrap extends Scaffold {
+    
+      public static $version = '1.0.0';
     
       /**
        * Schemas
@@ -39,16 +39,6 @@ namespace UsabilityDynamics\WP {
       public $errors = false;
       
       /**
-       * Singleton Instance Reference.
-       *
-       * @protected
-       * @static
-       * @property $instance
-       * @type \UsabilityDynamics\WPP\Bootstrap object
-       */
-      //protected static $instance = null;
-      
-      /**
        * Settings
        *
        * @private
@@ -64,7 +54,7 @@ namespace UsabilityDynamics\WP {
        *
        * @author peshkov@UD
        */
-      public function __construct( $args ) {
+      protected function __construct( $args ) {
         parent::__construct( $args );
         //** Define our Admin Notices handler object */
         $this->errors = new Errors( $args );
@@ -80,6 +70,7 @@ namespace UsabilityDynamics\WP {
         add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
         //** Initialize plugin here. All plugin actions must be added on this step */
         add_action( 'plugins_loaded', array( $this, 'init' ), 100 );
+        $this->boot();
       }
       
       /**
@@ -97,6 +88,14 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       public function init() {}
+      
+      /**
+       * Called in the end of constructor.
+       * Redeclare the method in child class!
+       *
+       * @author peshkov@UD
+       */
+      public function boot() {}
       
       /**
        * Initialize application.

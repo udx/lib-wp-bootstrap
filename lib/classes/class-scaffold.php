@@ -69,7 +69,7 @@ namespace UsabilityDynamics\WP {
        *
        * @author peshkov@UD
        */
-      public function __construct( $args = array() ) {
+      protected function __construct( $args = array() ) {
         //** Setup our plugin's data */
         $this->name = isset( $args[ 'name' ] ) ? trim( $args[ 'name' ] ) : false;
         $this->plugin = sanitize_key( $this->name );
