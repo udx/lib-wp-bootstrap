@@ -27,7 +27,7 @@ namespace UsabilityDynamics\WP {
        * @property schema
        * @var array
        */
-      public $schemas = array();
+      public $schema = null;
 
       /**
        * Admin Notices handler object
@@ -58,8 +58,6 @@ namespace UsabilityDynamics\WP {
         parent::__construct( $args );
         //** Define our Admin Notices handler object */
         $this->errors = new Errors( $args );
-        //** Define schemas here since we can set correct paths directly in property */
-        $this->define_schemas();
         //** Determine if Composer autoloader is included and modules classes are up to date */
         $this->composer_dependencies();
         //** Determine if plugin/theme requires or recommends another plugin(s) */
@@ -130,26 +128,6 @@ namespace UsabilityDynamics\WP {
         }
         //** Maybe define license manager */
         $this->define_license_manager();
-      }
-      
-      /**
-       * Defines property schemas ( $this->schemas )
-       * The list of pathes to schemas files must be set if needed.
-       * Redeclare the method in child class!
-       * 
-       * The list of available schemas
-       */
-      public function define_schemas() {
-        $this->schemas = array(
-          //** Composer Classes versions dependencies */
-          'dependencies' => false,
-          //** Plugins Dependencies. The list of required, recommend plugins, plugins versions */
-          'plugins' => false,
-          //** License Manager settings. Product ID, referrer ( required plugin ) */
-          'license' => false,
-          //** Licenses Client settings. Screen configuration. */
-          'licenses' => false,
-        );
       }
       
       /**
@@ -234,19 +212,40 @@ namespace UsabilityDynamics\WP {
       }
       
       /**
-       * Returns specific schema from file.
+       * Returns specific schema from composer.json file.
        *
        * @param string $file Path to file
-       * @param array $l10n Locale data
        * @author peshkov@UD
-       * @return array
+       * @return mixed array or false
        */
-      public function get_schema( $file = '', $l10n = array() ) {
-        if( !empty( $file ) && file_exists( $file ) ) {
-          $l10n = empty( $l10n ) ? $this->get_localization() : $l10n;
-          return (array)\UsabilityDynamics\Utility::l10n_localize( json_decode( file_get_contents( $file ), true ), (array)$l10n );
+      public function get_schema( $key = '' ) {
+        if( $this->schema === null ) {
+          $file = dirname( $this->plugin_file ) . '/composer.json';
+          if( file_exists( $file ) ) {
+            $this->schema = (array)\UsabilityDynamics\Utility::l10n_localize( json_decode( file_get_contents( $file ), true ), (array)$this->get_localization() );
+          }
         }
-        return array();
+        //** Break if composer.json does not exist */
+        if( !is_array( $this->schema ) ) {
+          return false;
+        }
+        //** Resolve dot-notated key. */
+        if( strpos( $key, '.' ) ) {
+          $current = $this->schema;
+          $p = strtok( $key, '.' );
+          while( $p !== false ) {
+            if( !isset( $current[ $p ] ) ) {
+              return false;
+            }
+            $current = $current[ $p ];
+            $p = strtok( '.' );
+          }
+          return $current;
+        } 
+        //** Get default key */
+        else {
+          return isset( $this->schema[ $key ] ) ? $this->schema[ $key ] : false;
+        }
       }
       
       /**
@@ -281,10 +280,10 @@ namespace UsabilityDynamics\WP {
           return false;
         }
         //** Be sure we have licenses scheme to continue */
-        if( empty( $this->schemas[ 'licenses' ] ) ) {
+        $schema = $this->get_schema( 'extra.schemas.licenses.client' );
+        if( !$schema ) {
           return false;
         }
-        $schema = $this->get_schema( $this->schemas[ 'licenses' ] );
         //** Licenses Manager */
         if( !class_exists( '\UsabilityDynamics\UD_API\Bootstrap' ) ) {
           $this->errors->add( __( 'Class \UsabilityDynamics\UD_API\Bootstrap does not exist. Be sure all required plugins and (or) composer modules installed and activated.', $this->domain ) );
@@ -311,10 +310,10 @@ namespace UsabilityDynamics\WP {
           return false;
         }
         //** Be sure we have license scheme to continue */
-        if( empty( $this->schemas[ 'license' ] ) ) {
+        $schema = $this->get_schema( 'extra.schemas.licenses.product' );
+        if( !$schema ) {
           return false;
         }
-        $schema = $this->get_schema( $this->schemas[ 'license' ] );
         if( empty( $schema[ 'product_id' ] ) || empty( $schema[ 'referrer' ] ) ) {
           $this->errors->add( __( 'Product requires license, but product ID and (or) referrer is undefined. Please, be sure, that license schema has all required data.', $this->domain ) );
         }
@@ -338,11 +337,7 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       private function plugins_dependencies() {
-        //** Determine if schema is set */
-        if( empty( $this->schemas[ 'plugins' ] ) ) {
-          return null;
-        }
-        $plugins = $this->get_schema( $this->schemas[ 'plugins' ] );
+        $plugins = $this->get_schema( 'extra.schemas.dependencies.plugins' );
         if( !empty( $plugins ) && is_array( $plugins ) ) {
           $tgma = TGM_Plugin_Activation::get_instance();
           foreach( $plugins as $plugin ) {
@@ -360,11 +355,7 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       private function composer_dependencies() {
-        //** Determine if schema is set */
-        if( empty( $this->schemas[ 'dependencies' ] ) ) {
-          return null;
-        }
-        $dependencies = $this->get_schema( $this->schemas[ 'dependencies' ] );
+        $dependencies = $this->get_schema( 'extra.schemas.dependencies.modules' );
         if( !empty( $dependencies ) && is_array( $dependencies ) ) {
           foreach( $dependencies as $module => $classes ) {
             if( !empty( $classes ) && is_array( $classes ) ) {
