@@ -372,6 +372,7 @@ namespace UsabilityDynamics\WP {
               foreach( $classes as $class => $v ) {
                 if( !class_exists( $class ) ) {
                   $this->errors->add( sprintf( __( 'Module <b>%s</b> is not installed or the version is old, class <b>%s</b> does not exist.', $this->domain ), $module, $class ) );
+                  continue;
                 }
                 if ( '*' != trim( $v ) && ( !property_exists( $class, 'version' ) || $class::$version < $v ) ) {
                   $this->errors->add( sprintf( __( 'Module <b>%s</b> should be updated to the latest version, class <b>%s</b> must have version <b>%s</b> or higher.', $this->domain ), $module, $class, $v ) );
