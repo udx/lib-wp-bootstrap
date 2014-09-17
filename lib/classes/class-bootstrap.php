@@ -219,7 +219,7 @@ namespace UsabilityDynamics\WP {
        */
       public function set( $key = null, $value = null ) {
         if( !is_object( $this->settings ) || !is_callable( array( $this->settings, 'set' ) ) ) {
-          return $value;
+          return false;
         }
         return $this->settings->set( $key, $value );
       }
@@ -233,7 +233,7 @@ namespace UsabilityDynamics\WP {
        */
       public function get( $key = null, $default = null ) {
         if( !is_object( $this->settings ) || !is_callable( array( $this->settings, 'set' ) ) ) {
-          return $value;
+          return $default;
         }
         return $this->settings->get( $key, $default );
       }
