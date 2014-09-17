@@ -18,7 +18,7 @@ namespace UsabilityDynamics\WP {
      */
     class Bootstrap extends Scaffold {
     
-      public static $version = '1.0.0';
+      public static $version = '1.0.1';
     
       /**
        * Schemas
@@ -64,6 +64,8 @@ namespace UsabilityDynamics\WP {
         $this->plugins_dependencies();
         //** Maybe define license client */
         $this->define_license_client();
+        //** Load text domain */
+        add_action( 'plugins_loaded', array( $this, 'load_textdomain' ), 1 );
         //** Add additional conditions on 'plugins_loaded' action before we start plugin initialization. */
         add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
         //** Initialize plugin here. All plugin actions must be added on this step */
@@ -96,8 +98,16 @@ namespace UsabilityDynamics\WP {
       public function boot() {}
       
       /**
-       * Initialize application.
-       * Redeclare the method in child class!
+       * Load Text Domain
+       *
+       * @author peshkov@UD
+       */
+      public function load_textdomain() {
+        load_plugin_textdomain( $this->domain, false, dirname( $this->plugin_file ) . '/static/languages/' ); 
+      }
+      
+      /**
+       * Go through additional conditions on 'plugins_loaded' action before we start plugin initialization
        *
        * @author peshkov@UD
        */
