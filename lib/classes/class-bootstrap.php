@@ -18,7 +18,7 @@ namespace UsabilityDynamics\WP {
      */
     class Bootstrap extends Scaffold {
     
-      public static $version = '1.0.1';
+      public static $version = '1.0.2';
     
       /**
        * Schemas
@@ -71,6 +71,23 @@ namespace UsabilityDynamics\WP {
         //** Initialize plugin here. All plugin actions must be added on this step */
         add_action( 'plugins_loaded', array( $this, 'init' ), 100 );
         $this->boot();
+      }
+      
+      /**
+       * Returns absolute DIR or URL path
+       *
+       * @since 1.0.2
+       */
+      public function path( $short_path, $type = 'url' ) {
+        switch( $type ) {
+          case 'url':
+            return $this->plugin_url . ltrim( $short_path, '/\\' );
+            break;
+          case 'dir':
+            return dirname( $this->plugin_file ) . '/' . ltrim( $short_path, '/\\' );
+            break;
+        }
+        return false;
       }
       
       /**
