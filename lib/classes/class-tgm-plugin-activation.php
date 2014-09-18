@@ -597,12 +597,6 @@ namespace UsabilityDynamics\WP {
            * @return null Returns early if we're on the Install page.
            */
           public function notices( $referrer = false ) {
-
-              //** Remove nag on the install page. */
-              if ( $this->is_tgmpa_page() || empty( $referrer ) ) {
-                  //return array();
-              }
-              
               //** Check if get_plugins() function exists. This is required on the front end of the */
               //** site, since it is in a file that is normally only loaded in the admin. */
               if ( ! function_exists( 'get_plugins' ) ) {
