@@ -110,6 +110,8 @@ namespace UsabilityDynamics\WP {
                     continue; // No need to display plugins if they are installed and activated.
                 }
 
+                //echo "<pre>"; print_r( $plugin ); echo "</pre>"; //die();
+                
                 $table_data[$i]['sanitized_plugin'] = $plugin['name'];
                 $table_data[$i]['slug']             = $this->_get_plugin_data_from_name( $plugin['name'] );
 
@@ -140,21 +142,27 @@ namespace UsabilityDynamics\WP {
                 if ( isset( $table_data[$i]['plugin'] ) && (array) $table_data[$i]['plugin'] ) {
                     $plugin['name'] = $table_data[$i]['plugin'];
                 }
-
-                if ( ! empty( $plugin['source'] ) ) {
+                
+                if ( ! empty( $plugin['source'] ) || ( isset( $plugin['private'] ) && $plugin['private'] == true ) ) {
                     // The plugin must be from a private repository.
-                    if ( preg_match( '|^http(s)?://|', $plugin['source'] ) ) {
-                        $table_data[$i]['source'] = __( 'Private Repository', 'tgmpa' );
+                    if ( !empty( $plugin['source'] ) && preg_match( '|^http(s)?://|', $plugin['source'] ) ) {
+                      $table_data[$i]['source'] = __( 'Private Repository', 'tgmpa' );
                     // The plugin is pre-packaged with the theme.
+                    } elseif( isset( $plugin['private'] ) && $plugin['private'] == true ) {
+                      $_source = !empty( $plugin[ 'author' ] ) ? $plugin[ 'author' ] : __( 'Private Repository', 'tgmpa' );
+                      $_url = !empty( $plugin[ 'author_url' ] ) ? $plugin[ 'author_url' ] : ( !empty( $plugin[ 'external_url' ] ) ? $plugin[ 'external_url' ] : false );
+                      $_source = !empty( $_url ) ? "<a target=\"_blank\" href=\"{$_url}\">{$_source}</a>" : $_source;
+                      $table_data[$i]['source'] = $_source;
                     } else {
-                        $table_data[$i]['source'] = __( 'Pre-Packaged', 'tgmpa' );
+                      $table_data[$i]['source'] = __( 'Pre-Packaged', 'tgmpa' );
                     }
                 }
                 // The plugin is from the WordPress repository.
                 else {
                     $table_data[$i]['source'] = __( 'WordPress Repository', 'tgmpa' );
                 }
-
+                
+                $table_data[$i]['source'] = "<div style=\"min-height:44px;\">{$table_data[$i]['source']}</div>";
                 $table_data[$i]['type'] = isset( $plugin['required'] ) && $plugin['required'] ? __( 'Required', 'tgmpa' ) : __( 'Recommended', 'tgmpa' );
 
                 if ( ! isset( $installed_plugins[$plugin['file_path']] ) ) {
@@ -254,36 +262,45 @@ namespace UsabilityDynamics\WP {
          */
         public function column_plugin( $item ) {
 
+            //echo "<pre>"; print_r( $item ); echo "</pre>";
+        
             $installed_plugins = get_plugins();
-
-            // No need to display any hover links.
-            if ( is_plugin_active( $item['file_path'] ) ) {
-                $actions = array();
+            $actions = array();
+            
+            //** No need to display any hover links. */
+            if ( is_plugin_active( $item['file_path'] ) || !isset( TGM_Plugin_Activation::$instance->plugins[ $item[ 'slug' ] ] ) ) {
+              return sprintf( '%1$s %2$s', $item['plugin'], $this->row_actions( $actions ) );
             }
-
-            // We need to display the 'Install' hover link.
+            
+            $plugin = TGM_Plugin_Activation::$instance->plugins[ $item[ 'slug' ] ];
+            
+            //** We need to display the 'Install' hover link. */
             if ( ! isset( $installed_plugins[$item['file_path']] ) ) {
+              if( isset( $plugin[ 'private' ] ) && $plugin[ 'private' ] == true ) {
+                //** Ignore 'Install' action since plugin is not available for direct upload. */
+              } else {
                 $actions = array(
-                    'install' => sprintf(
-                        '<a href="%1$s" title="' . __( 'Install', 'tgmpa' ) . ' %2$s">' . __( 'Install', 'tgmpa' ) . '</a>',
-                        wp_nonce_url(
-                            add_query_arg(
-                                array(
-                                    'page'          => TGM_Plugin_Activation::$instance->menu,
-                                    'plugin'        => $item['slug'],
-                                    'plugin_name'   => $item['sanitized_plugin'],
-                                    'plugin_source' => $item['url'],
-                                    'tgmpa-install' => 'install-plugin',
-                                ),
-                                network_admin_url( 'themes.php' )
-                            ),
-                            'tgmpa-install'
+                  'install' => sprintf(
+                    '<a href="%1$s" title="' . __( 'Install', 'tgmpa' ) . ' %2$s">' . __( 'Install', 'tgmpa' ) . '</a>',
+                    wp_nonce_url(
+                      add_query_arg(
+                        array(
+                          'page'          => TGM_Plugin_Activation::$instance->menu,
+                          'plugin'        => $item['slug'],
+                          'plugin_name'   => $item['sanitized_plugin'],
+                          'plugin_source' => $item['url'],
+                          'tgmpa-install' => 'install-plugin',
                         ),
-                        $item['sanitized_plugin']
+                        network_admin_url( 'themes.php' )
+                      ),
+                      'tgmpa-install'
                     ),
+                    $item['sanitized_plugin']
+                  ),
                 );
+              }
             }
-            // We need to display the 'Activate' hover link.
+            //** We need to display the 'Activate' hover link. */
             elseif ( is_plugin_inactive( $item['file_path'] ) ) {
                 $actions = array(
                     'activate' => sprintf(
@@ -319,10 +336,18 @@ namespace UsabilityDynamics\WP {
          * @return string     The input checkbox with all necessary info.
          */
         public function column_cb( $item ) {
-
-            $value = $item['file_path'] . ',' . $item['url'] . ',' . $item['sanitized_plugin'];
-            return sprintf( '<input type="checkbox" name="%1$s[]" value="%2$s" id="%3$s" />', $this->_args['singular'], $value, $item['sanitized_plugin'] );
-
+          //** Ignore Plugins if they are not in list */
+          if ( is_plugin_active( $item['file_path'] ) || !isset( TGM_Plugin_Activation::$instance->plugins[ $item[ 'slug' ] ] ) ) {
+            return '';
+          }
+          //** Ignore plugin's action if it's private and not installed. */
+          $plugin = TGM_Plugin_Activation::$instance->plugins[ $item[ 'slug' ] ];
+          $installed_plugins = get_plugins();
+          if( isset( $plugin[ 'private' ] ) && $plugin[ 'private' ] == true && !isset( $installed_plugins[$item['file_path']] ) ) {
+            return '';
+          }
+          $value = $item['file_path'] . ',' . $item['url'] . ',' . $item['sanitized_plugin'];
+          return sprintf( '<input type="checkbox" name="%1$s[]" value="%2$s" id="%3$s" />', $this->_args['singular'], $value, $item['sanitized_plugin'] );
         }
 
         /**
@@ -552,7 +577,7 @@ namespace UsabilityDynamics\WP {
                 $url   = add_query_arg( array( 'page' => TGM_Plugin_Activation::$instance->menu ), network_admin_url( 'themes.php' ) );
                 $nonce = 'bulk-plugins';
                 $names = $plugin_names;
-
+                
                 // Create a new instance of TGM_Bulk_Installer.
                 $installer = new TGM_Bulk_Installer( $skin = new TGM_Bulk_Installer_Skin( compact( 'url', 'nonce', 'names' ) ) );
 

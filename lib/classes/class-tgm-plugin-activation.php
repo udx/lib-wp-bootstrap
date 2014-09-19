@@ -503,7 +503,7 @@ namespace UsabilityDynamics\WP {
                   $source = ( 'upload' == $type ) ? $this->default_path . $plugin['source'] : $plugin['source'];
 
                   // Create a new instance of Plugin_Upgrader.
-                  $upgrader = new Plugin_Upgrader( $skin = new Plugin_Installer_Skin( compact( 'type', 'title', 'url', 'nonce', 'plugin', 'api' ) ) );
+                  $upgrader = new \Plugin_Upgrader( $skin = new \Plugin_Installer_Skin( compact( 'type', 'title', 'url', 'nonce', 'plugin', 'api' ) ) );
 
                   // Perform the action and install the plugin from the $source urldecode().
                   $upgrader->install( $source );
