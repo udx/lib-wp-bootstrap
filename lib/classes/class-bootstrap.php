@@ -14,11 +14,11 @@ namespace UsabilityDynamics\WP {
      * Bootstrap the plugin in WordPress.
      *
      * @class Bootstrap
-     * @author: potanin@UD
+     * @author: peshkov@UD
      */
     class Bootstrap extends Scaffold {
     
-      public static $version = '1.0.2';
+      public static $version = '1.0.3';
     
       /**
        * Schemas
