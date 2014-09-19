@@ -150,7 +150,7 @@ namespace UsabilityDynamics\WP {
         }
         
         //** Determine if message has been dismissed ( for week! ) */
-        $dismiss_timer = get_user_meta( get_current_user_id(), ( 'dismissed_notice_' . sanitize_key( $this->name ) ), false );
+        $dismiss_timer = get_user_meta( get_current_user_id(), ( 'dismissed_notice_' . sanitize_key( $this->name ) ), true );
         if ( !$dismiss_timer || ( time() - (int)$dismiss_timer ) >= 604800 ) {
           //** Notices Block */
           if( !empty( $messages ) && is_array( $messages ) ) {
@@ -160,7 +160,7 @@ namespace UsabilityDynamics\WP {
             } else {
               $message = sprintf( __( '<p><b>%s</b> is active, but has the following notices:</p> %s', $this->domain ), $this->name, $message );
             }
-            $this->action_links[ 'messages' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-' . sanitize_key( $this->name ), 'dismiss_admin_notices' ) . '" target="_parent">' . __( 'Dismiss this notice', $this->domain ) . '</a>';
+            $this->action_links[ 'messages' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this notice', $this->domain ) . '</a>';
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'messages' ] ) . '</p>';
             echo '<div class="ud-admin-notice updated fade" style="padding:11px;">' . $message . '</div>';
           }
