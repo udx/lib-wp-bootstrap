@@ -64,12 +64,24 @@ namespace UsabilityDynamics\WP {
         $this->plugins_dependencies();
         //** Maybe define license client */
         $this->define_license_client();
+        //** Set install/upgrade pages if needed */
+        $this->define_splash_pages();
         //** Load text domain */
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ), 1 );
         //** Add additional conditions on 'plugins_loaded' action before we start plugin initialization. */
         add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
         //** Initialize plugin here. All plugin actions must be added on this step */
         add_action( 'plugins_loaded', array( $this, 'init' ), 100 );
+        
+        //** Maybe need to show UD splash page. Used static functions intentionaly. */
+        if ( !has_action( 'admin_init', array( Dashboard::instance(), 'maybe_ud_splash_page' ) ) ) {
+          add_action( 'admin_init', array( Dashboard::instance(), 'maybe_ud_splash_page' ) );
+        }
+        
+        if ( !has_action( 'admin_menu', array( Dashboard::instance(), 'add_ud_splash_page') ) ) {
+          add_action( 'admin_menu', array( Dashboard::instance(), 'add_ud_splash_page') );
+        }
+
         $this->boot();
       }
       
@@ -400,6 +412,68 @@ namespace UsabilityDynamics\WP {
         }
       }
       
+      /**
+       * Define splash pages for plugins if needed.
+       * @return boolean
+       * @author korotkov@ud
+       */
+      public function define_splash_pages() {
+        
+        //** If not defined in schemas or not determined - skip */
+        if ( !$_splashes = $this->get_schema( 'extra.splashes' ) ) {
+          return false;
+        }
+        
+        $_page = false;
+        
+        //** Determine what to show depending on version installed */
+        $_installed_version = get_option( $this->plugin . '-splash-version', 0 );
+        
+        //** Just installed */
+        if ( !$_installed_version ) {
+          $_page = 'install';
+        
+        //** Upgraded */
+        } elseif ( version_compare( $_installed_version,  $this->args['version'] ) == -1 ) {
+          $_page = 'upgrade';
+          
+        //** In other case do not do this */
+        } else {
+          return false;
+        }
+        
+        //** Abort if no files exist */
+        if ( !file_exists( $this->path($_splashes[$_page], 'dir') ) ) {
+          return false;
+        }
+          
+        //** Push data to temp transient */
+        $_current_pages_to_show = get_transient( 'ud_splash_dashboard' );
+
+        //** If empty - create */
+        if ( !$_current_pages_to_show ) {
+          set_transient( 'ud_splash_dashboard', array(
+            $this->plugin => array(
+              'name' => $this->name,
+              'content' => $this->path($_splashes[$_page], 'dir'),
+              'version' => $this->args['version']
+            )
+          ), 30 );
+
+        //** If not empty - update */
+        } else {
+          $_current_pages_to_show[$this->plugin] = array(
+            'name' => $this->name,
+            'content' => $this->path($_splashes[$_page], 'dir'),
+            'version' => $this->args['version']
+          );
+          set_transient( 'ud_splash_dashboard', $_current_pages_to_show, 30 ); 
+        }
+        
+        set_transient( 'ud_need_splash', 'ud_splash_dashboard', 30 );
+
+      }
+    
     }
   
   }
