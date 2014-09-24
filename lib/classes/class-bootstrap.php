@@ -448,11 +448,11 @@ namespace UsabilityDynamics\WP {
         }
           
         //** Push data to temp transient */
-        $_current_pages_to_show = get_transient( 'ud_splash_dashboard' );
+        $_current_pages_to_show = get_transient( Dashboard::instance()->transient_key );
 
         //** If empty - create */
         if ( !$_current_pages_to_show ) {
-          set_transient( 'ud_splash_dashboard', array(
+          set_transient( Dashboard::instance()->transient_key, array(
             $this->plugin => array(
               'name' => $this->name,
               'content' => $this->path($_splashes[$_page], 'dir'),
@@ -467,10 +467,10 @@ namespace UsabilityDynamics\WP {
             'content' => $this->path($_splashes[$_page], 'dir'),
             'version' => $this->args['version']
           );
-          set_transient( 'ud_splash_dashboard', $_current_pages_to_show, 30 ); 
+          set_transient( Dashboard::instance()->transient_key, $_current_pages_to_show, 30 ); 
         }
         
-        set_transient( 'ud_need_splash', 'ud_splash_dashboard', 30 );
+        set_transient( Dashboard::instance()->need_splash_key, Dashboard::instance()->transient_key, 30 );
 
       }
     
