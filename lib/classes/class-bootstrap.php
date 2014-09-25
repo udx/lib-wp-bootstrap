@@ -132,7 +132,7 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       public function load_textdomain() {
-        load_plugin_textdomain( $this->domain, false, dirname( $this->plugin_file ) . '/static/languages/' ); 
+        load_plugin_textdomain( $this->domain, false, basename( $this->plugin_file, '.php' ) . '/static/languages/' );
       }
       
       /**
