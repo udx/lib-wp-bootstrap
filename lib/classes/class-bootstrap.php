@@ -41,12 +41,12 @@ namespace UsabilityDynamics\WP {
       /**
        * Settings
        *
-       * @private
+       * @public
        * @static
        * @property $settings
        * @type \UsabilityDynamics\Settings object
        */
-      private $settings = null;
+      public $settings = null;
       
       /**
        * Constructor
@@ -244,7 +244,7 @@ namespace UsabilityDynamics\WP {
        * @return \UsabilityDynamics\type
        */
       public function get( $key = null, $default = null ) {
-        if( !is_object( $this->settings ) || !is_callable( array( $this->settings, 'set' ) ) ) {
+        if( !is_object( $this->settings ) || !is_callable( array( $this->settings, 'get' ) ) ) {
           return $default;
         }
         return $this->settings->get( $key, $default );
