@@ -13,7 +13,7 @@ namespace UsabilityDynamics\WP {
      * 
      * @author korotkov@ud
      */
-    class Dashboard {
+    class Dashboard extends Scaffold {
       
       /**
        * Singleton instance
@@ -82,7 +82,7 @@ namespace UsabilityDynamics\WP {
 		}
         
         if ( $_GET['page'] == $this->page_slug ) {
-          add_dashboard_page( __('Welcome to Usability Dynamics, Inc.'), __('UD Notices'), 'manage_options', $this->page_slug, array( $this, 'ud_splash_page' ) );
+          add_dashboard_page( __('Welcome to Usability Dynamics, Inc.', $this->domain), __('UD Notices', $this->domain), 'manage_options', $this->page_slug, array( $this, 'ud_splash_page' ) );
         }
       }
       
@@ -100,8 +100,8 @@ namespace UsabilityDynamics\WP {
         
           <div class="wrap about-wrap">
 
-            <h1><?php _e( 'Usability Dynamics, Inc. Dashboard' ) ?></h1>
-            <div class="about-text"><?php _e( 'Thank you for using our products.' ) ?></div>
+            <h1><?php _e( 'Usability Dynamics, Inc. Dashboard', $this->domain ) ?></h1>
+            <div class="about-text"><?php _e( 'Thank you for using our products.', $this->domain ) ?></div>
             <div class="wp-badge ud-badge"></div>
             
             <?php
