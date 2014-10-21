@@ -20,24 +20,6 @@ namespace UsabilityDynamics\WP {
     abstract class Scaffold {
     
       /**
-       * Absolute Path to Plugin Main File
-       *
-       * @public
-       * @property plugin_path
-       * @var array
-       */
-      public $plugin_file = false;
-      
-      /**
-       * Plugin URL
-       *
-       * @public
-       * @property plugin_path
-       * @var array
-       */
-      public $plugin_url = false;
-    
-      /**
        * Plugin ( Theme ) Name.
        *
        * @public
@@ -53,7 +35,7 @@ namespace UsabilityDynamics\WP {
        * @property $plugin
        * @type string
        */
-      public $plugin = false;
+      public $slug = false;
 
       /**
        * Textdomain String
@@ -63,7 +45,25 @@ namespace UsabilityDynamics\WP {
        * @var string
        */
       public $domain = false;
-            
+      
+      /**
+       * Root path
+       *
+       * @public
+       * @property root_path
+       * @var string
+       */
+      public $root_path = false;
+      
+      /**
+       * Root URL
+       *
+       * @public
+       * @property root_url
+       * @var string
+       */
+      public $root_url = false;
+      
       /**
        * Storage for dynamic properties
        * Used by magic __set, __get
@@ -79,13 +79,22 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       protected function __construct( $args = array() ) {
-        //** Setup our plugin's data */
-        $this->name = isset( $args[ 'name' ] ) ? trim( $args[ 'name' ] ) : false;
-        $this->plugin = sanitize_key( $this->name );
-        $this->domain = isset( $args[ 'domain' ] ) ? trim( $args[ 'domain' ] ) : false;
-        $this->plugin_file = isset( $args[ 'plugin_file' ] ) ? trim( $args[ 'plugin_file' ] ) : false;
-        $this->plugin_url = isset( $args[ 'plugin_url' ] ) ? trim( $args[ 'plugin_url' ] ) : false;
-        $this->args = $args;
+        $_args = array();
+        foreach( $args as $k => $v ) {
+          if( property_exists( $this, $k ) ) {
+            switch( $k ) {
+              case 'root_path':
+                $this->root_path = trailingslashit( trim( $v ) );
+                break;
+              default:
+                $this->{$k} = trim( $v );
+                break;
+            }
+          } else {
+            $_args[ $k ] = $v;
+          }
+        }
+        $this->args = $_args;
       }
       
       /**
