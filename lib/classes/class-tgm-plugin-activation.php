@@ -204,7 +204,8 @@ namespace UsabilityDynamics\WP {
               do_action_ref_array( 'tgmpa_init', array( $this ) );
 
               // When the rest of WP has loaded, kick-start the rest of the class.
-              add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
+              //add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
+              add_action( 'init', array( $this, 'init' ) );
 
           }
 
@@ -234,7 +235,6 @@ namespace UsabilityDynamics\WP {
                   array_multisort( $sorted, SORT_ASC, $this->plugins );
 
                   add_action( 'admin_menu', array( $this, 'admin_menu' ) );
-                  add_action( 'admin_head', array( $this, 'dismiss' ) );
                   add_filter( 'install_plugin_complete_actions', array( $this, 'actions' ) );
                   add_action( 'switch_theme', array( $this, 'flush_plugins_cache' ) );
 
@@ -247,10 +247,8 @@ namespace UsabilityDynamics\WP {
                   }
 
                   if ( $this->has_notices ) {
-                      //add_action( 'admin_notices', array( $this, 'notices' ) );
                       add_action( 'admin_init', array( $this, 'admin_init' ), 1 );
                       add_action( 'admin_enqueue_scripts', array( $this, 'thickbox' ) );
-                      add_action( 'switch_theme', array( $this, 'update_dismiss' ) );
                   }
 
                   // Setup the force activation hook.
@@ -325,11 +323,7 @@ namespace UsabilityDynamics\WP {
            * @since 2.1.0
            */
           public function thickbox() {
-
-              if ( ! get_user_meta( get_current_user_id(), 'tgmpa_dismissed_notice', true ) ) {
-                  add_thickbox();
-              }
-
+            add_thickbox();
           }
 
           /**
@@ -772,21 +766,6 @@ namespace UsabilityDynamics\WP {
           }
           
           /**
-           * Add dismissable admin notices.
-           *
-           * Appends a link to the admin nag messages. If clicked, the admin notice disappears and no longer is visible to users.
-           *
-           * @since 2.1.0
-           */
-          public function dismiss() {
-
-              if ( isset( $_GET['tgmpa-dismiss'] ) ) {
-                  update_user_meta( get_current_user_id(), 'tgmpa_dismissed_notice', 1 );
-              }
-
-          }
-
-          /**
            * Add individual plugin to our collection of plugins.
            *
            * If the required keys are not set or the plugin has already
@@ -954,18 +933,6 @@ namespace UsabilityDynamics\WP {
 
               return false;
 
-          }
-
-          /**
-           * Delete dismissable nag option when theme is switched.
-           *
-           * This ensures that the user is again reminded via nag of required
-           * and/or recommended plugins if they re-activate the theme.
-           *
-           * @since 2.1.1
-           */
-          public function update_dismiss() {
-            delete_user_meta( get_current_user_id(), 'tgmpa_dismissed_notice' );
           }
 
           /**

@@ -18,7 +18,7 @@ namespace UsabilityDynamics\WP {
      */
     class Bootstrap_Theme extends Bootstrap {
     
-      public static $version = '1.0.0';
+      public static $version = '1.0.3';
       
       /**
        * Slug of parent theme if exist
@@ -48,7 +48,22 @@ namespace UsabilityDynamics\WP {
         parent::__construct( $args );
         //** Load text domain */
         add_action( 'after_setup_theme', array( $this, 'load_textdomain' ), 1 );
-        $this->init();
+        //** TGM Plugin activation. */
+        $this->check_plugins_requirements();
+        
+        //** Be sure we do not have errors. Do not initialize theme if we have anyone. */
+        if( $this->has_errors() ) {
+          if( !is_admin() ) {
+            //** Show message about error on fornt end only if user administrator! */
+            if( current_user_can( 'manage_options' ) ) {
+              _e( "Theme is activated with errors. Please, follow instructions on admin panel to solve the issue!", $this->domain );
+            }
+            die();
+          }
+        } else {
+          $this->init();
+        }
+        
       }
       
       /**
@@ -59,6 +74,8 @@ namespace UsabilityDynamics\WP {
       public function load_textdomain() {
         load_theme_textdomain( $this->domain, $this->root_path . 'static/languages/' );
       }
+      
+      
 
       /**
        * Determine if instance already exists and Return Instance

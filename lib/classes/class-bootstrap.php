@@ -67,6 +67,8 @@ namespace UsabilityDynamics\WP {
         $this->errors = new Errors( $args );
         //** Determine if Composer autoloader is included and modules classes are up to date */
         $this->composer_dependencies();
+        //** Determine if plugin/theme requires or recommends another plugin(s) */
+        $this->plugins_dependencies();
         //** Set install/upgrade pages if needed */
         $this->define_splash_pages();
         
@@ -181,6 +183,38 @@ namespace UsabilityDynamics\WP {
       }
       
       /**
+       * Check plugins requirements
+       *
+       * @author peshkov@UD
+       */
+      public function check_plugins_requirements() {
+        //** Determine if we have TGMA Plugin Activation initialized. */
+        $is_tgma = $this->is_tgma;
+        if( $is_tgma ) {
+          $tgma = TGM_Plugin_Activation::get_instance();
+          //** Maybe get TGMPA notices. */
+          $notices = $tgma->notices( get_class( $this ) );
+          if( !empty( $notices[ 'messages' ] ) && is_array( $notices[ 'messages' ] ) ) {
+            $error_links = false;
+            $message_links = false;
+            foreach( $notices[ 'messages' ] as $m ) {
+              if( $m[ 'type' ] == 'error' ) $error_links = true;
+              elseif( $m[ 'type' ] == 'message' ) $message_links = true;
+              $this->errors->add( $m[ 'value' ], $m[ 'type' ] );
+            }
+            //** Maybe add footer action links to errors and|or notices block. */
+            if( !empty( $notices[ 'links' ] ) && is_array( $notices[ 'links' ] ) ) {
+              foreach( $notices[ 'links' ] as $type => $links ) {
+                foreach( $links as $link ) {
+                  $this->errors->add_action_link( $link, $type );
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      /**
        * Define splash pages for plugins if needed.
        * @return boolean
        * @author korotkov@ud
@@ -263,6 +297,24 @@ namespace UsabilityDynamics\WP {
               }
             }
           }
+        }
+      }
+      
+      /**
+       * Determine if plugin/theme requires or recommends another plugin(s)
+       *
+       * @author peshkov@UD
+       */
+      private function plugins_dependencies() {
+        $plugins = $this->get_schema( 'extra.schemas.dependencies.plugins' );
+        if( !empty( $plugins ) && is_array( $plugins ) ) {
+          $tgma = TGM_Plugin_Activation::get_instance();
+          foreach( $plugins as $plugin ) {
+            $plugin[ '_referrer' ] = get_class( $this );
+            $plugin[ '_referrer_name' ] = $this->name;
+            $tgma->register( $plugin );
+          }
+          $this->is_tgma = true;
         }
       }
       

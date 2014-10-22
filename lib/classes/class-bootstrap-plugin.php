@@ -18,7 +18,7 @@ namespace UsabilityDynamics\WP {
      */
     class Bootstrap_Plugin extends Bootstrap {
     
-      public static $version = '1.0.0';
+      public static $version = '1.0.3';
       
       /**
        * Path to main plugin's file
@@ -38,8 +38,6 @@ namespace UsabilityDynamics\WP {
       protected function __construct( $args ) {
         parent::__construct( $args );
         
-        //** Determine if plugin/theme requires or recommends another plugin(s) */
-        $this->plugins_dependencies();
         //** Maybe define license client */
         $this->define_license_client();
         
@@ -48,9 +46,23 @@ namespace UsabilityDynamics\WP {
         //** Add additional conditions on 'plugins_loaded' action before we start plugin initialization. */
         add_action( 'plugins_loaded', array( $this, 'plugins_loaded' ), 10 );
         //** Initialize plugin here. All plugin actions must be added on this step */
-        add_action( 'plugins_loaded', array( $this, 'init' ), 100 );
-        
+        add_action( 'plugins_loaded', array( $this, 'pre_init' ), 100 );
+        //** TGM Plugin activation. */
+        add_action( 'plugins_loaded', array( $this, 'check_plugins_requirements' ), 10 );
         $this->boot();
+      }
+      
+      /**
+	     * Determine if we have errors before plugin initialization!
+	     *
+       * @since 1.0.3
+	     */
+      public function pre_init() {
+        //** Be sure we do not have errors. Do not initialize plugin if we have them. */
+        if( $this->has_errors() ) {
+          return null;
+        }
+        $this->init();
       }
 
 	    /**
@@ -98,31 +110,6 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       public function plugins_loaded() {
-        //** Determine if we have TGMA Plugin Activation initialized. */
-        $is_tgma = $this->is_tgma;
-        if( $is_tgma ) {
-          $tgma = TGM_Plugin_Activation::get_instance();
-          //** Maybe get TGMPA notices. */
-          $notices = $tgma->notices( get_class( $this ) );
-          if( !empty( $notices[ 'messages' ] ) && is_array( $notices[ 'messages' ] ) ) {
-            $error_links = false;
-            $message_links = false;
-            foreach( $notices[ 'messages' ] as $m ) {
-              if( $m[ 'type' ] == 'error' ) $error_links = true;
-              elseif( $m[ 'type' ] == 'message' ) $message_links = true;
-              $this->errors->add( $m[ 'value' ], $m[ 'type' ] );
-            }
-            //** Maybe add footer action links to errors and|or notices block. */
-            if( !empty( $notices[ 'links' ] ) && is_array( $notices[ 'links' ] ) ) {
-              foreach( $notices[ 'links' ] as $type => $links ) {
-                foreach( $links as $link ) {
-                  $this->errors->add_action_link( $link, $type );
-                }
-              }
-            }
-          }
-        }
-        //** Maybe define license manager */
         $this->define_license_manager();
       }
       
@@ -241,24 +228,6 @@ namespace UsabilityDynamics\WP {
         }
         $this->license_manager = new \UsabilityDynamics\UD_API\Manager( $schema );
         return true;
-      }
-      
-      /**
-       * Determine if plugin/theme requires or recommends another plugin(s)
-       *
-       * @author peshkov@UD
-       */
-      private function plugins_dependencies() {
-        $plugins = $this->get_schema( 'extra.schemas.dependencies.plugins' );
-        if( !empty( $plugins ) && is_array( $plugins ) ) {
-          $tgma = TGM_Plugin_Activation::get_instance();
-          foreach( $plugins as $plugin ) {
-            $plugin[ '_referrer' ] = get_class( $this );
-            $plugin[ '_referrer_name' ] = $this->name;
-            $tgma->register( $plugin );
-          }
-          $this->is_tgma = true;
-        }
       }
       
     }
