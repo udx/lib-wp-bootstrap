@@ -77,15 +77,6 @@ namespace UsabilityDynamics\WP {
         if ( !has_action( 'admin_menu', array( Dashboard::get_instance(), 'add_ud_splash_page') ) ) {
           add_action( 'admin_menu', array( Dashboard::get_instance(), 'add_ud_splash_page') );
         }
-        
-        //** Debug data */
-        if( defined( 'WP_DEBUG' ) && WP_DEBUG === true ) {
-          $trace = debug_backtrace();
-          $this->debug = array(
-            /** Where from the current class is called */
-            'backtrace_path' => $trace[0]['file'],
-          );
-        }
       }
       
       /**
