@@ -21,6 +21,15 @@ namespace UsabilityDynamics\WP {
       public static $version = '1.0.0';
       
       /**
+       * Path to main plugin's file
+       *
+       * @public
+       * @property plugin_file
+       * @var array
+       */
+      public $plugin_file = false;
+      
+      /**
        * Constructor
        * Attention: MUST NOT BE CALLED DIRECTLY! USE get_instance() INSTEAD!
        *
@@ -67,14 +76,6 @@ namespace UsabilityDynamics\WP {
       }
       
       /**
-       * Initialize application.
-       * Redeclare the method in child class!
-       *
-       * @author peshkov@UD
-       */
-      public function init() {}
-      
-      /**
        * Called in the end of constructor.
        * Redeclare the method in child class!
        *
@@ -88,7 +89,7 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       public function load_textdomain() {
-        load_plugin_textdomain( $this->domain, false, basename( $this->plugin_file, '.php' ) . '/static/languages/' );
+        load_plugin_textdomain( $this->domain, false, $this->root_path . 'static/languages/' );
       }
       
       /**
@@ -153,6 +154,8 @@ namespace UsabilityDynamics\WP {
             $args = array_merge( (array)$pd, (array)$args, array(
               'root_path' => dirname( $dbt[0]['file'] ),
               'root_url' => plugin_dir_url( $dbt[0]['file'] ),
+              'schema_path' => dirname( $dbt[0]['file'] ) . '/composer.json',
+              'plugin_file' => $dbt[0]['file'],
             ) );
             $class::$instance = new $class( $args );
             //** Register activation hook */

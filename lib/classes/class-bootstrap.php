@@ -26,7 +26,16 @@ namespace UsabilityDynamics\WP {
        * @var array
        */
       public $schema = null;
-
+      
+      /**
+       * Absolute path to schema ( composer.json )
+       *
+       * @public
+       * @property schema_path
+       * @var array
+       */
+      public $schema_path = null;
+      
       /**
        * Admin Notices handler object
        *
@@ -69,6 +78,14 @@ namespace UsabilityDynamics\WP {
           add_action( 'admin_menu', array( Dashboard::get_instance(), 'add_ud_splash_page') );
         }
       }
+      
+      /**
+       * Initialize application.
+       * Redeclare the method in final class!
+       *
+       * @author peshkov@UD
+       */
+      public function init() {}
       
       /**
        * Determine if errors exist

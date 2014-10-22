@@ -21,6 +21,24 @@ namespace UsabilityDynamics\WP {
       public static $version = '1.0.0';
       
       /**
+       * Slug of parent theme if exist
+       *
+       * @public
+       * @property schema_path
+       * @var array
+       */
+      public $template = false;
+      
+      /**
+       * If theme is child
+       *
+       * @public
+       * @property is_child
+       * @var array
+       */
+      public $is_child = false;
+      
+      /**
        * Constructor
        * Attention: MUST NOT BE CALLED DIRECTLY! USE get_instance() INSTEAD!
        *
@@ -28,18 +46,20 @@ namespace UsabilityDynamics\WP {
        */
       protected function __construct( $args ) {
         parent::__construct( $args );
-        load_plugin_textdomain( $this->domain, false, $this->root_path . 'static/languages/' );
+        //** Load text domain */
+        add_action( 'after_setup_theme', array( $this, 'load_textdomain' ), 1 );
         $this->init();
       }
-
+      
       /**
-       * Initialize application.
-       * Redeclare the method in child class!
+       * Load Text Domain
        *
        * @author peshkov@UD
        */
-      public function init() {}
-      
+      public function load_textdomain() {
+        load_theme_textdomain( $this->domain, $this->root_path . 'static/languages/' );
+      }
+
       /**
        * Determine if instance already exists and Return Instance
        *
@@ -65,8 +85,11 @@ namespace UsabilityDynamics\WP {
             'template' => $t->get( 'Template' ),
             'domain' => $t->get( 'TextDomain' ),
             'is_child' => is_child_theme(),
-            'root_path' => '',
+            'root_path' => trailingslashit( wp_normalize_path( get_template_directory() ) ),
+            'root_url' => trailingslashit( wp_normalize_path( get_template_directory_uri() ) ),
+            'schema_path' => trailingslashit( wp_normalize_path( get_template_directory() ) ) . 'composer.json'
           ) );
+          //echo "<pre>"; print_r( $args ); echo "</pre>"; die();
           $class::$instance = new $class( $args );
         }
         return $class::$instance;
