@@ -82,19 +82,25 @@ namespace UsabilityDynamics\WP {
         $_args = array();
         foreach( $args as $k => $v ) {
           if( property_exists( $this, $k ) ) {
-            switch( $k ) {
-              case 'root_path':
-                $this->root_path = trailingslashit( trim( $v ) );
-                break;
-              default:
-                $this->{$k} = trim( $v );
-                break;
+            $prop = new \ReflectionProperty( $this, $k );
+            if( !$prop->isStatic() ) {
+              switch( $k ) {
+                case 'root_path':
+                  $this->root_path = trailingslashit( trim( $v ) );
+                  break;
+                default:
+                  $this->{$k} = trim( $v );
+                  break;
+              }
+            } else {
+              $_args[ $k ] = $v;
             }
           } else {
             $_args[ $k ] = $v;
           }
         }
         $this->args = $_args;
+        
       }
       
       /**
