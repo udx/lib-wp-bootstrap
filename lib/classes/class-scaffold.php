@@ -88,6 +88,8 @@ namespace UsabilityDynamics\WP {
                 case 'root_path':
                   $this->root_path = trailingslashit( trim( $v ) );
                   break;
+                case 'name':
+                  $this->slug = sanitize_key( trim( $v ) );
                 default:
                   $this->{$k} = trim( $v );
                   break;
