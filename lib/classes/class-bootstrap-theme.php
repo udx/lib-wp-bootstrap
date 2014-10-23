@@ -50,7 +50,8 @@ namespace UsabilityDynamics\WP {
         add_action( 'after_setup_theme', array( $this, 'load_textdomain' ), 1 );
         //** TGM Plugin activation. */
         $this->check_plugins_requirements();
-        
+        //** May be initialize Licenses Manager. */
+        $this->define_license_manager();
         //** Be sure we do not have errors. Do not initialize theme if we have anyone. */
         if( $this->has_errors() ) {
           if( !is_admin() ) {
@@ -63,7 +64,6 @@ namespace UsabilityDynamics\WP {
         } else {
           $this->init();
         }
-        
       }
       
       /**
@@ -75,8 +75,6 @@ namespace UsabilityDynamics\WP {
         load_theme_textdomain( $this->domain, $this->root_path . 'static/languages/' );
       }
       
-      
-
       /**
        * Determine if instance already exists and Return Instance
        *

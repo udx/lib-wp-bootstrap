@@ -69,9 +69,10 @@ namespace UsabilityDynamics\WP {
         $this->composer_dependencies();
         //** Determine if plugin/theme requires or recommends another plugin(s) */
         $this->plugins_dependencies();
+        //** Maybe define license client */
+        $this->define_license_client();
         //** Set install/upgrade pages if needed */
         $this->define_splash_pages();
-        
         //** Maybe need to show UD splash page. Used static functions intentionaly. */
         if ( !has_action( 'admin_init', array( Dashboard::get_instance(), 'maybe_ud_splash_page' ) ) ) {
           add_action( 'admin_init', array( Dashboard::get_instance(), 'maybe_ud_splash_page' ) );
@@ -316,6 +317,70 @@ namespace UsabilityDynamics\WP {
           }
           $this->is_tgma = true;
         }
+      }
+      
+      
+      /**
+       * Defines License Client if 'licenses' schema is set
+       *
+       * @author peshkov@UD
+       */
+      protected function define_license_client() {
+        //** Break if we already have errors to prevent fatal ones. */
+        if( $this->has_errors() ) {
+          return false;
+        }
+        //** Be sure we have licenses scheme to continue */
+        $schema = $this->get_schema( 'extra.schemas.licenses.client' );
+        if( !$schema ) {
+          return false;
+        }
+        //** Licenses Manager */
+        if( !class_exists( '\UsabilityDynamics\UD_API\Bootstrap' ) ) {
+          $this->errors->add( __( 'Class \UsabilityDynamics\UD_API\Bootstrap does not exist. Be sure all required plugins and (or) composer modules installed and activated.', $this->domain ) );
+          return false;
+        }
+        $args = $this->args;
+        $args = array_merge( $args, $schema, array( 
+          'errors_callback' => array( $this->errors, 'add' ),
+        ) );
+        if( empty( $args[ 'screen' ] ) ) {
+          $this->errors->add( __( 'Licenses client can not be activated due to invalid \'licenses\' schema.', $this->domain ) );
+        }
+        $this->client = new \UsabilityDynamics\UD_API\Bootstrap( $args );
+      }
+      
+      /**
+       * Defines License Manager if 'license' schema is set
+       *
+       * @author peshkov@UD
+       */
+      public function define_license_manager() {
+        //** Break if we already have errors to prevent fatal ones. */
+        if( $this->has_errors() ) {
+          return false;
+        }
+        //** Be sure we have license scheme to continue */
+        $schema = $this->get_schema( 'extra.schemas.licenses.product' );
+        if( !$schema ) {
+          return false;
+        }
+        if( empty( $schema[ 'product_id' ] ) || empty( $schema[ 'referrer' ] ) ) {
+          $this->errors->add( __( 'Product requires license, but product ID and (or) referrer is undefined. Please, be sure, that license schema has all required data.', $this->domain ), 'message' );
+        }
+        $schema = array_merge( (array)$schema, array( 
+          'instance' => '',
+          'plugin_name' => $this->name,
+          'plugin_file' => $this->plugin_file,
+          'errors_callback' => array( $this->errors, 'add' )
+        ) );
+        //** Licenses Manager */
+        if( !class_exists( '\UsabilityDynamics\UD_API\Manager' ) ) {
+          $this->errors->add( __( 'Class \UsabilityDynamics\UD_API\Manager does not exist. Be sure all required plugins installed and activated.', $this->domain ), 'message' );
+          return false;
+        }
+        $this->license_manager = new \UsabilityDynamics\UD_API\Manager( $schema );
+        return true;
       }
       
     }
