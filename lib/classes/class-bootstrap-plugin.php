@@ -20,14 +20,7 @@ namespace UsabilityDynamics\WP {
     
       public static $version = '1.0.3';
       
-      /**
-       * Path to main plugin's file
-       *
-       * @public
-       * @property plugin_file
-       * @var array
-       */
-      public $plugin_file = false;
+      public $type = 'plugin';
       
       /**
        * Constructor
@@ -138,7 +131,7 @@ namespace UsabilityDynamics\WP {
               'root_path' => dirname( $dbt[0]['file'] ),
               'root_url' => plugin_dir_url( $dbt[0]['file'] ),
               'schema_path' => dirname( $dbt[0]['file'] ) . '/composer.json',
-              'plugin_file' => $dbt[0]['file'],
+              'boot_file' => $dbt[0]['file'],
             ) );
             $class::$instance = new $class( $args );
             //** Register activation hook */

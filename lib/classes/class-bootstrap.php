@@ -56,6 +56,15 @@ namespace UsabilityDynamics\WP {
       public $settings = null;
       
       /**
+       * Path to main plugin/theme file
+       *
+       * @public
+       * @property boot_file
+       * @var array
+       */
+      public $boot_file = false;
+      
+      /**
        * Constructor
        * Attention: MUST NOT BE CALLED DIRECTLY! USE get_instance() INSTEAD!
        *
@@ -341,16 +350,16 @@ namespace UsabilityDynamics\WP {
           return false;
         }
         $args = $this->args;
-        $args = array_merge( $args, $schema, array( 
+        $args = array_merge( $args, $schema, array(
+          'type' => $this->type,
           'name' => $this->name,
-          'plugin' => $this->slug,
+          'slug' => $this->slug,
           'domain' => $this->domain,
           'errors_callback' => array( $this->errors, 'add' ),
         ) );
         if( empty( $args[ 'screen' ] ) ) {
           $this->errors->add( __( 'Licenses client can not be activated due to invalid \'licenses\' schema.', $this->domain ) );
         }
-        //echo "<pre>"; print_r( $args ); echo "</pre>";die();
         $this->client = new \UsabilityDynamics\UD_API\Bootstrap( $args );
       }
       
@@ -372,9 +381,10 @@ namespace UsabilityDynamics\WP {
         if( empty( $schema[ 'product_id' ] ) || empty( $schema[ 'referrer' ] ) ) {
           $this->errors->add( __( 'Product requires license, but product ID and (or) referrer is undefined. Please, be sure, that license schema has all required data.', $this->domain ), 'message' );
         }
-        $schema = array_merge( (array)$schema, array( 
-          'plugin_name' => $this->name,
-          'plugin_file' => $this->plugin_file,
+        $schema = array_merge( (array)$schema, array(
+          'type' => $this->type,
+          'name' => $this->name,
+          'boot_file' => $this->boot_file,
           'errors_callback' => array( $this->errors, 'add' )
         ) );
         //** Licenses Manager */

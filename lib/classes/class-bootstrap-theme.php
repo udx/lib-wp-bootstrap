@@ -20,6 +20,8 @@ namespace UsabilityDynamics\WP {
     
       public static $version = '1.0.3';
       
+      public $type = 'theme';
+      
       /**
        * Slug of parent theme if exist
        *
@@ -102,7 +104,8 @@ namespace UsabilityDynamics\WP {
             'is_child' => is_child_theme(),
             'root_path' => trailingslashit( wp_normalize_path( get_template_directory() ) ),
             'root_url' => trailingslashit( wp_normalize_path( get_template_directory_uri() ) ),
-            'schema_path' => trailingslashit( wp_normalize_path( get_template_directory() ) ) . 'composer.json'
+            'schema_path' => trailingslashit( wp_normalize_path( get_template_directory() ) ) . 'composer.json',
+            'boot_file' => trailingslashit( wp_normalize_path( get_template_directory() ) ) . 'style.css',
           ) );
           //echo "<pre>"; print_r( $args ); echo "</pre>"; die();
           $class::$instance = new $class( $args );
