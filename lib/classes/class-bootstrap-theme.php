@@ -54,6 +54,8 @@ namespace UsabilityDynamics\WP {
         $this->check_plugins_requirements();
         //** May be initialize Licenses Manager. */
         $this->define_license_manager();
+        //** Maybe define license client */
+        $this->define_license_client();
         //** Be sure we do not have errors. Do not initialize theme if we have anyone. */
         if( $this->has_errors() ) {
           if( !is_admin() ) {

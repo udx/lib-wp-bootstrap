@@ -30,6 +30,8 @@ namespace UsabilityDynamics\WP {
        */
       protected function __construct( $args ) {
         parent::__construct( $args );
+        //** Maybe define license client */
+        $this->define_license_client();
         //** Load text domain */
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ), 1 );
         //** May be initialize Licenses Manager. */

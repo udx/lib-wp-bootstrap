@@ -78,8 +78,6 @@ namespace UsabilityDynamics\WP {
         $this->composer_dependencies();
         //** Determine if plugin/theme requires or recommends another plugin(s) */
         $this->plugins_dependencies();
-        //** Maybe define license client */
-        $this->define_license_client();
         //** Set install/upgrade pages if needed */
         $this->define_splash_pages();
         //** Maybe need to show UD splash page. Used static functions intentionaly. */
