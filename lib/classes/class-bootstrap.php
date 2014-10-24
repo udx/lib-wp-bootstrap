@@ -376,7 +376,7 @@ namespace UsabilityDynamics\WP {
         if( !$schema ) {
           return false;
         }
-        if( empty( $schema[ 'product_id' ] ) || empty( $schema[ 'referrer' ] ) ) {
+        if( empty( $schema[ 'product_id' ] ) || ( empty( $schema[ 'referrer' ] ) && $this->type !== 'theme' ) ) {
           $this->errors->add( __( 'Product requires license, but product ID and (or) referrer is undefined. Please, be sure, that license schema has all required data.', $this->domain ), 'message' );
         }
         $schema = array_merge( (array)$schema, array(
