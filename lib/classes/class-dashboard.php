@@ -91,7 +91,7 @@ namespace UsabilityDynamics\WP {
         $updates = get_transient( $this->transient_key );
         ?>
         <div class="wrap about-wrap">
-          <h1><?php _e( 'Usability Dynamics, Inc. Dashboard', $this->domain ) ?></h1>
+          <h1><?php _e( 'Usability Dynamics, Inc.', $this->domain ) ?></h1>
           <div class="about-text"><?php _e( 'Thank you for using our products.', $this->domain ) ?></div>
           <div class="wp-badge ud-badge"></div>
           <?php
