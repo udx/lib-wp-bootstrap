@@ -110,11 +110,6 @@ namespace UsabilityDynamics\WP {
             }
           ?>
         </div>
-        <style>
-          .ud-badge {
-              background: url("https://usabilitydynamics.com/production/wp-content/uploads/2012/03/usability-dynamics-logo2.png") no-repeat scroll center 62px / 80% #F4F4F4;
-          }
-        </style>
         <?php
       }
       
