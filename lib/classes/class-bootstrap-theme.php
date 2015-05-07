@@ -66,7 +66,11 @@ namespace UsabilityDynamics\WP {
             die();
           }
         } else {
-          $this->init();
+          if( current_filter() !== 'after_setup_theme' && !did_action( 'after_setup_theme' ) ) {
+            add_action( 'after_setup_theme', array( $this, 'init' ) );
+          } else {
+            $this->init();  
+          }
         }
       }
       
