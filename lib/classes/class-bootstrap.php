@@ -241,7 +241,7 @@ namespace UsabilityDynamics\WP {
            * about current instance
            */
 
-          $transient = md5( 'dismiss_' . $this->slug . '_' . str_replace( '.', '_', $this->args['version'] ) . '_notice' );
+          $option = sanitize_key( 'dismiss_' . $this->slug . '_' . str_replace( '.', '_', $this->args['version'] ) . '_notice' );
 
           if(
             isset( $_REQUEST[ 'page' ] ) &&
@@ -253,7 +253,7 @@ namespace UsabilityDynamics\WP {
             /** Dismiss Admin Notice */
             if( isset( $_REQUEST[ 'dismiss' ] ) ) {
 
-              set_transient( $transient, array(
+              update_option( $option, array(
                 'slug' => $this->slug,
                 'type' => $this->type,
                 'version' => $this->args['version']
@@ -285,8 +285,8 @@ namespace UsabilityDynamics\WP {
 
           }
 
-          if( !get_transient( $transient ) ) {
-            add_action( 'admin_notices',  array( $this, 'admin_upgrade_notice' ), 1 );
+          if( !get_option( $option ) ) {
+            add_action( 'admin_notices',  array( $this, 'render_upgrade_notice' ), 1 );
           }
 
           if( empty( $page ) ) {
@@ -330,11 +330,10 @@ namespace UsabilityDynamics\WP {
       }
 
       /**
-       * Renders Notice with information about installed or upgraded plugin / theme
-       * 
+       * Renders Upgrade Notice.
+       *
        */
-      public function admin_upgrade_notice() {
-
+      public function render_upgrade_notice() {
         if( $this->type == 'theme' ) {
           $icon = file_exists( get_template_directory() . '/static/images/icon.png' ) ? get_template_directory_uri() . '/static/images/icon.png' : false;
         } else {
