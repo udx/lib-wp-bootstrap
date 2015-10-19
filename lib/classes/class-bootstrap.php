@@ -348,11 +348,7 @@ namespace UsabilityDynamics\WP {
 
           }
 
-          if ( ! function_exists( 'wp_get_current_user' ) ) {
-            require_once( ABSPATH . 'wp-includes/pluggable.php' );
-          }
-
-          if( !get_option( $option ) && current_user_can( 'activate_plugins' ) ) {
+          if( !get_option( $option ) ) {
             add_action( 'admin_notices',  array( $this, 'render_upgrade_notice' ), 1 );
           }
 
@@ -401,10 +397,16 @@ namespace UsabilityDynamics\WP {
        *
        */
       public function render_upgrade_notice() {
-
+        
         if( $this->type == 'theme' ) {
+          if( !current_user_can( 'switch_themes' ) ) {
+            return;
+          }
           $icon = file_exists( get_template_directory() . '/static/images/icon.png' ) ? get_template_directory_uri() . '/static/images/icon.png' : false;
         } else {
+          if( !current_user_can( 'activate_plugins' ) ) {
+            return;
+          }
           $icon = file_exists( $this->path( 'static/images/icon.png', 'dir' ) ) ? $this->path( 'static/images/icon.png', 'url' ) : false;
         }
 
