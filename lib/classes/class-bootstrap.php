@@ -73,7 +73,9 @@ namespace UsabilityDynamics\WP {
       protected function __construct( $args ) {
         parent::__construct( $args );
         //** Define our Admin Notices handler object */
-        $this->errors = new Errors( $args );
+        $this->errors = new Errors( array_merge( $args, array(
+          'type' => $this->type
+        ) ) );
         //** Determine if Composer autoloader is included and modules classes are up to date */
         $this->composer_dependencies();
         //** Determine if plugin/theme requires or recommends another plugin(s) */
