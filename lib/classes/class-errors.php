@@ -188,8 +188,8 @@ namespace UsabilityDynamics\WP {
         if( !empty( $warnings ) && is_array( $warnings ) ) {
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $warnings ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> has the following warnings:</p> %s', $this->domain ), $this->name, $message );
-          if( !empty( $this->action_links[ 'errors' ] ) && is_array( $this->action_links[ 'errors' ] ) ) {
-            $message .= '<p>' . implode( ' | ', $this->action_links[ 'errors' ] ) . '</p>';
+          if( !empty( $this->action_links[ 'warnings' ] ) && is_array( $this->action_links[ 'warnings' ] ) ) {
+            $message .= '<p>' . implode( ' | ', $this->action_links[ 'warnings' ] ) . '</p>';
           }
           echo '<div class="ud-admin-notice updated update-nag fade" style="padding:11px;">' . $message . '</div>';
         }
