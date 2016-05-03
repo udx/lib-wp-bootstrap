@@ -131,8 +131,12 @@ namespace UsabilityDynamics\WP {
        * @since 2.1.0
        */
       public function dismiss() {
-        if ( isset( $_GET[ 'udan-dismiss-' . sanitize_key( $this->name ) ] ) ) {
+        if ( isset( $_GET[ 'udan-dismiss-notice' . sanitize_key( $this->name ) ] ) ) {
           update_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ), time() );
+        } else if ( isset( $_GET[ 'udan-dismiss-warning' . sanitize_key( $this->name ) ] ) ) {
+	        update_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ), time() );
+        } else if ( isset( $_GET[ 'udan-dismiss-error' . sanitize_key( $this->name ) ] ) ) {
+	        update_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ), time() );
         }
       }
       
@@ -174,29 +178,39 @@ namespace UsabilityDynamics\WP {
           echo "<style>.ud-admin-notice a { text-decoration: underline !important; } .ud-admin-notice { display: block !important; } .ud-admin-notice.update-nag { border-color: #ffba00 !important; }</style>";
         }
         
-        //** Errors Block */
-        if( !empty( $errors ) && is_array( $errors ) ) {
+        //** Determine if error has been dismissed */
+        $error_dismissed = get_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ) );
+        if ( empty( $error_dismissed ) && ! empty( $errors ) && is_array( $errors ) ) {
+          //** Errors Block */
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $errors ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> is not active due to following errors:</p> %s', $this->domain ), $this->name, $message );
-          if( !empty( $this->action_links[ 'errors' ] ) && is_array( $this->action_links[ 'errors' ] ) ) {
-            $message .= '<p>' . implode( ' | ', $this->action_links[ 'errors' ] ) . '</p>';
+          if ( $this->dismiss ) {
+            $this->action_links['errors'][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-error' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this error', $this->domain ) . '</a>';
+          }
+          if ( ! empty( $this->action_links['errors'] ) && is_array( $this->action_links['errors'] ) ) {
+            $message .= '<p>' . implode( ' | ', $this->action_links['errors'] ) . '</p>';
           }
           echo '<div class="ud-admin-notice error fade" style="padding:11px;">' . $message . '</div>';
         }
 
-        //** Warnings Block */
-        if( !empty( $warnings ) && is_array( $warnings ) ) {
+        //** Determine if warning has been dismissed */
+        $warning_dismissed = get_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ) );
+        if ( empty( $warning_dismissed ) && ! empty( $warnings ) && is_array( $warnings ) ) {
+          //** Warnings Block */
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $warnings ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> has the following warnings:</p> %s', $this->domain ), $this->name, $message );
           if( !empty( $this->action_links[ 'warnings' ] ) && is_array( $this->action_links[ 'warnings' ] ) ) {
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'warnings' ] ) . '</p>';
           }
+          if( $this->dismiss ) {
+            $this->action_links[ 'warnings' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-warning' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this warning', $this->domain ) . '</a>';
+          }
           echo '<div class="ud-admin-notice updated update-nag fade" style="padding:11px;">' . $message . '</div>';
         }
-        
+
         //** Determine if message has been dismissed */
-        $dismissed = get_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ) );
-        if ( empty( $dismissed ) ) {
+        $message_dismissed = get_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ) );
+        if ( empty( $message_dismissed ) ) {
           //** Notices Block */
           if( !empty( $messages ) && is_array( $messages ) ) {
             $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $messages ) . '</li></ul>';
@@ -206,7 +220,7 @@ namespace UsabilityDynamics\WP {
               $message = sprintf( __( '<p><b>%s</b> is active, but has the following notices:</p> %s', $this->domain ), $this->name, $message );
             }
             if( $this->dismiss ) {
-              $this->action_links[ 'messages' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this notice', $this->domain ) . '</a>';
+              $this->action_links[ 'messages' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-notice' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this notice', $this->domain ) . '</a>';
             }
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'messages' ] ) . '</p>';
             echo '<div class="ud-admin-notice updated fade" style="padding:11px;">' . $message . '</div>';
