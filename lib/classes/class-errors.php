@@ -72,6 +72,7 @@ namespace UsabilityDynamics\WP {
         parent::__construct( $args );
         add_action( 'admin_notices', array( $this, 'admin_notices' ) );
         add_action( 'admin_head', array( $this, 'dismiss' ) );
+        add_action( 'wp_ajax_ud_dismiss', array( $this, 'dismiss_notices' ) );
       }
       
       /**
@@ -134,9 +135,9 @@ namespace UsabilityDynamics\WP {
         if ( isset( $_GET[ 'udan-dismiss-notice' . sanitize_key( $this->name ) ] ) ) {
           update_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ), time() );
         } else if ( isset( $_GET[ 'udan-dismiss-warning' . sanitize_key( $this->name ) ] ) ) {
-	        update_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ), time() );
+          update_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ), time() );
         } else if ( isset( $_GET[ 'udan-dismiss-error' . sanitize_key( $this->name ) ] ) ) {
-	        update_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ), time() );
+          update_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ), time() );
         }
       }
       
@@ -169,6 +170,13 @@ namespace UsabilityDynamics\WP {
         if( TGM_Plugin_Activation::get_instance()->is_tgmpa_page() ) {
           return;
         }
+
+        //enqueue dismiss js for ajax requests
+        $script_path = Utility::path( 'static/scripts/ud-dismiss.js', 'url' );
+        wp_enqueue_script( "ud-dismiss", $script_path, array( 'jquery' ) );
+        wp_localize_script( "ud-dismiss", "_ud_vars", array(
+            "ajaxurl" => admin_url( 'admin-ajax.php' ),
+        ) );
         
         $errors = apply_filters( 'ud:errors:admin_notices', $this->errors, $this->args );
         $messages = apply_filters( 'ud:messages:admin_notices', $this->messages, $this->args );
@@ -185,7 +193,7 @@ namespace UsabilityDynamics\WP {
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $errors ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> is not active due to following errors:</p> %s', $this->domain ), $this->name, $message );
           if ( $this->dismiss ) {
-            $this->action_links['errors'][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-error' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this error', $this->domain ) . '</a>';
+            $this->action_links['errors'][] = '<a class="dismiss-error dismiss" data-key="dismissed_error_' . sanitize_key( $this->name ).'" href="#">' . __( 'Dismiss this error', $this->domain ) . '</a>';
           }
           if ( ! empty( $this->action_links['errors'] ) && is_array( $this->action_links['errors'] ) ) {
             $message .= '<p>' . implode( ' | ', $this->action_links['errors'] ) . '</p>';
@@ -203,7 +211,7 @@ namespace UsabilityDynamics\WP {
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'warnings' ] ) . '</p>';
           }
           if( $this->dismiss ) {
-            $this->action_links[ 'warnings' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-warning' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this warning', $this->domain ) . '</a>';
+            $this->action_links[ 'warnings' ][] = '<a class="dismiss-warning dismiss" data-key="dismissed_warning_' . sanitize_key( $this->name ).'" href="#">' . __( 'Dismiss this warning', $this->domain ) . '</a>';
           }
           echo '<div class="ud-admin-notice updated update-nag fade" style="padding:11px;">' . $message . '</div>';
         }
@@ -220,13 +228,34 @@ namespace UsabilityDynamics\WP {
               $message = sprintf( __( '<p><b>%s</b> is active, but has the following notices:</p> %s', $this->domain ), $this->name, $message );
             }
             if( $this->dismiss ) {
-              $this->action_links[ 'messages' ][] = '<a class="dismiss-notice" href="' . add_query_arg( 'udan-dismiss-notice' . sanitize_key( $this->name ), 'true' ) . '" target="_parent">' . __( 'Dismiss this notice', $this->domain ) . '</a>';
+              $this->action_links[ 'messages' ][] = '<a class="dismiss-notice dismiss" data-key="dismissed_notice_' . sanitize_key( $this->name ).'" href="#">' . __( 'Dismiss this notice', $this->domain ) . '</a>';
             }
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'messages' ] ) . '</p>';
             echo '<div class="ud-admin-notice updated fade" style="padding:11px;">' . $message . '</div>';
           }
         }
         
+      }
+
+      /**
+       * dismiss the notice ajax callback
+       * @throws \Exception
+       */
+      public function dismiss_notices(){
+        if( empty($_POST) ){
+          throw new \Exception( 'Invalid Arguments' );
+        }
+
+        if( empty($_POST['key']) ) {
+          throw new \Exception( 'Invalid key' );
+        }
+
+        update_option( ( $_POST['key'] ), time() );
+
+        wp_send_json( array(
+                'success' => '1',
+            )
+        );
       }
       
     }
