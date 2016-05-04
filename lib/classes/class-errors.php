@@ -71,7 +71,6 @@ namespace UsabilityDynamics\WP {
       public function __construct( $args ) {
         parent::__construct( $args );
         add_action( 'admin_notices', array( $this, 'admin_notices' ) );
-        add_action( 'admin_head', array( $this, 'dismiss' ) );
         add_action( 'wp_ajax_ud_dismiss', array( $this, 'dismiss_notices' ) );
       }
       
@@ -122,23 +121,6 @@ namespace UsabilityDynamics\WP {
        */
       public function has_errors() {
         return !empty( $this->errors ) ? true : false;
-      }
-      
-      /**
-       * Add dismissable admin notices.
-       *
-       * Appends a link to the admin nag messages. If clicked, the admin notice disappears and no longer is visible to users.
-       *
-       * @since 2.1.0
-       */
-      public function dismiss() {
-        if ( isset( $_GET[ 'udan-dismiss-notice' . sanitize_key( $this->name ) ] ) ) {
-          update_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ), time() );
-        } else if ( isset( $_GET[ 'udan-dismiss-warning' . sanitize_key( $this->name ) ] ) ) {
-          update_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ), time() );
-        } else if ( isset( $_GET[ 'udan-dismiss-error' . sanitize_key( $this->name ) ] ) ) {
-          update_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ), time() );
-        }
       }
       
       /**
