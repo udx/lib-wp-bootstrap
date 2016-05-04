@@ -236,20 +236,26 @@ namespace UsabilityDynamics\WP {
        * @throws \Exception
        */
       public function dismiss_notices(){
+        $response = array(
+          'success' => '0',
+        );
+        $error = false;
+
         if( empty($_POST) ){
-          throw new \Exception( 'Invalid Arguments' );
+          $response['error'] = __( 'Invalid Arguments', $this->domain );
+          $error = true;
         }
 
         if( empty($_POST['key']) ) {
-          throw new \Exception( 'Invalid key' );
+          $response['error'] = __( 'Invalid key', $this->domain );
+          $error = true;
         }
 
-        update_option( ( $_POST['key'] ), time() );
+        if ( ! $error && update_option( ( $_POST['key'] ), time() ) ) {
+          $response['success'] = '1';
+        }
 
-        wp_send_json( array(
-                'success' => '1',
-            )
-        );
+        wp_send_json( $response );
       }
 
       /**
