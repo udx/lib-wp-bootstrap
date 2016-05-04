@@ -188,7 +188,7 @@ namespace UsabilityDynamics\WP {
         
         //** Determine if error has been dismissed */
         $error_dismissed = get_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ) );
-        if ( empty( $error_dismissed ) && ! empty( $errors ) && is_array( $errors ) ) {
+        if ( $this->check_dismiss_time( $error_dismissed ) && ! empty( $errors ) && is_array( $errors ) ) {
           //** Errors Block */
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $errors ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> is not active due to following errors:</p> %s', $this->domain ), $this->name, $message );
@@ -203,7 +203,7 @@ namespace UsabilityDynamics\WP {
 
         //** Determine if warning has been dismissed */
         $warning_dismissed = get_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ) );
-        if ( empty( $warning_dismissed ) && ! empty( $warnings ) && is_array( $warnings ) ) {
+        if ( $this->check_dismiss_time( $warning_dismissed ) && ! empty( $warnings ) && is_array( $warnings ) ) {
           //** Warnings Block */
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $warnings ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> has the following warnings:</p> %s', $this->domain ), $this->name, $message );
@@ -218,7 +218,7 @@ namespace UsabilityDynamics\WP {
 
         //** Determine if message has been dismissed */
         $message_dismissed = get_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ) );
-        if ( empty( $message_dismissed ) ) {
+        if ( $this->check_dismiss_time( $message_dismissed ) ) {
           //** Notices Block */
           if( !empty( $messages ) && is_array( $messages ) ) {
             $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $messages ) . '</li></ul>';
@@ -256,6 +256,25 @@ namespace UsabilityDynamics\WP {
                 'success' => '1',
             )
         );
+      }
+
+      /**
+       * Check dismiss notice timestamp if greater than 24 hrs
+       *
+       * @param string $time
+       *
+       * @return bool
+       */
+      public function check_dismiss_time( $time = '' ) {
+        if( empty( $time ) ) {
+          return true;
+        }
+        $current_time = time();
+        $diff = $current_time - 86400;
+        if ( $diff > (int)$time ) {
+          return true;
+        }
+        return false;
       }
       
     }
