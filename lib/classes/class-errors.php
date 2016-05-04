@@ -185,18 +185,13 @@ namespace UsabilityDynamics\WP {
         if( !empty( $errors ) || !empty( $messages ) || !empty( $warnings ) ) {
           echo "<style>.ud-admin-notice a { text-decoration: underline !important; } .ud-admin-notice { display: block !important; } .ud-admin-notice.update-nag { border-color: #ffba00 !important; }</style>";
         }
-        
-        //** Determine if error has been dismissed */
-        $error_dismissed = get_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ) );
-        if ( $this->check_dismiss_time( $error_dismissed ) && ! empty( $errors ) && is_array( $errors ) ) {
-          //** Errors Block */
+
+        //** Errors Block */
+        if( !empty( $errors ) && is_array( $errors ) ) {
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $errors ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> is not active due to following errors:</p> %s', $this->domain ), $this->name, $message );
-          if ( $this->dismiss ) {
-            $this->action_links['errors'][] = '<a class="dismiss-error dismiss" data-key="dismissed_error_' . sanitize_key( $this->name ).'" href="#">' . __( 'Dismiss this error', $this->domain ) . '</a>';
-          }
-          if ( ! empty( $this->action_links['errors'] ) && is_array( $this->action_links['errors'] ) ) {
-            $message .= '<p>' . implode( ' | ', $this->action_links['errors'] ) . '</p>';
+          if( !empty( $this->action_links[ 'errors' ] ) && is_array( $this->action_links[ 'errors' ] ) ) {
+            $message .= '<p>' . implode( ' | ', $this->action_links[ 'errors' ] ) . '</p>';
           }
           echo '<div class="ud-admin-notice error fade" style="padding:11px;">' . $message . '</div>';
         }
@@ -218,7 +213,7 @@ namespace UsabilityDynamics\WP {
 
         //** Determine if message has been dismissed */
         $message_dismissed = get_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ) );
-        if ( $this->check_dismiss_time( $message_dismissed ) ) {
+        if ( empty( $message_dismissed ) ) {
           //** Notices Block */
           if( !empty( $messages ) && is_array( $messages ) ) {
             $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $messages ) . '</li></ul>';
