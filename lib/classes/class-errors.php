@@ -170,19 +170,18 @@ namespace UsabilityDynamics\WP {
         if( TGM_Plugin_Activation::get_instance()->is_tgmpa_page() ) {
           return;
         }
-
-        //enqueue dismiss js for ajax requests
-        $script_path = Utility::path( 'static/scripts/ud-dismiss.js', 'url' );
-        wp_enqueue_script( "ud-dismiss", $script_path, array( 'jquery' ) );
-        wp_localize_script( "ud-dismiss", "_ud_vars", array(
-            "ajaxurl" => admin_url( 'admin-ajax.php' ),
-        ) );
         
         $errors = apply_filters( 'ud:errors:admin_notices', $this->errors, $this->args );
         $messages = apply_filters( 'ud:messages:admin_notices', $this->messages, $this->args );
         $warnings = apply_filters( 'ud:warnings:admin_notices', $this->warnings, $this->args );
         
         if( !empty( $errors ) || !empty( $messages ) || !empty( $warnings ) ) {
+          //enqueue dismiss js for ajax requests
+          $script_path = Utility::path( 'static/scripts/ud-dismiss.js', 'url' );
+          wp_enqueue_script( "ud-dismiss", $script_path, array( 'jquery' ) );
+          wp_localize_script( "ud-dismiss", "_ud_vars", array(
+              "ajaxurl" => admin_url( 'admin-ajax.php' ),
+          ) );
           echo "<style>.ud-admin-notice a { text-decoration: underline !important; } .ud-admin-notice { display: block !important; } .ud-admin-notice.update-nag { border-color: #ffba00 !important; }</style>";
         }
 
