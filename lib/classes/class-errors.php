@@ -158,12 +158,6 @@ namespace UsabilityDynamics\WP {
         $warnings = apply_filters( 'ud:warnings:admin_notices', $this->warnings, $this->args );
         
         if( !empty( $errors ) || !empty( $messages ) || !empty( $warnings ) ) {
-          //enqueue dismiss js for ajax requests
-          $script_path = Utility::path( 'static/scripts/ud-dismiss.js', 'url' );
-          wp_enqueue_script( "ud-dismiss", $script_path, array( 'jquery' ) );
-          wp_localize_script( "ud-dismiss", "_ud_vars", array(
-              "ajaxurl" => admin_url( 'admin-ajax.php' ),
-          ) );
           echo "<style>.ud-admin-notice a { text-decoration: underline !important; } .ud-admin-notice { display: block !important; } .ud-admin-notice.update-nag { border-color: #ffba00 !important; }</style>";
         }
 
@@ -179,7 +173,8 @@ namespace UsabilityDynamics\WP {
 
         //** Determine if warning has been dismissed */
         $warning_dismissed = get_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ) );
-        if ( $this->check_dismiss_time( $warning_dismissed ) && ! empty( $warnings ) && is_array( $warnings ) ) {
+        $show_warnings = $this->check_dismiss_time( $warning_dismissed );
+        if ( $show_warnings && ! empty( $warnings ) && is_array( $warnings ) ) {
           //** Warnings Block */
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $warnings ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> has the following warnings:</p> %s', $this->domain ), $this->name, $message );
@@ -209,6 +204,15 @@ namespace UsabilityDynamics\WP {
             $message .= '<p>' . implode( ' | ', $this->action_links[ 'messages' ] ) . '</p>';
             echo '<div class="ud-admin-notice updated fade" style="padding:11px;">' . $message . '</div>';
           }
+        }
+
+        if ( $show_warnings || empty( $message_dismissed ) ) {
+          //enqueue dismiss js for ajax requests
+          $script_path = Utility::path( 'static/scripts/ud-dismiss.js', 'url' );
+          wp_enqueue_script( "ud-dismiss", $script_path, array( 'jquery' ) );
+          wp_localize_script( "ud-dismiss", "_ud_vars", array(
+              "ajaxurl" => admin_url( 'admin-ajax.php' ),
+          ) );
         }
         
       }
