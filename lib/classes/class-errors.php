@@ -224,13 +224,9 @@ namespace UsabilityDynamics\WP {
       public function dismiss_notices(){
         $response = array(
           'success' => '0',
+          'error' => __( 'There was an error in request.', $this->domain ),
         );
         $error = false;
-
-        if( empty($_POST) ){
-          $response['error'] = __( 'Invalid Arguments', $this->domain );
-          $error = true;
-        }
 
         if( empty($_POST['key']) ) {
           $response['error'] = __( 'Invalid key', $this->domain );

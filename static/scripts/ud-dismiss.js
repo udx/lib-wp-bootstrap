@@ -16,6 +16,8 @@ jQuery( document ).ready( function () {
     jQuery.post( _ud_vars.ajaxurl, data, function ( result_data ) {
         if( result_data.success == '1' ) {
           _this.closest('.ud-admin-notice').remove();
+        } else if ( result_data.success == '0' ) {
+          alert(result_data.error);
         }
     }, "json" );
 
