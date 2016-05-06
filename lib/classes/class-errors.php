@@ -71,7 +71,6 @@ namespace UsabilityDynamics\WP {
       public function __construct( $args ) {
         parent::__construct( $args );
         add_action( 'admin_notices', array( $this, 'admin_notices' ) );
-        add_action( 'admin_head', array( $this, 'dismiss' ) );
         add_action( 'wp_ajax_ud_dismiss', array( $this, 'dismiss_notices' ) );
       }
       
@@ -125,23 +124,6 @@ namespace UsabilityDynamics\WP {
       }
       
       /**
-       * Add dismissable admin notices.
-       *
-       * Appends a link to the admin nag messages. If clicked, the admin notice disappears and no longer is visible to users.
-       *
-       * @since 2.1.0
-       */
-      public function dismiss() {
-        if ( isset( $_GET[ 'udan-dismiss-notice' . sanitize_key( $this->name ) ] ) ) {
-          update_option( ( 'dismissed_notice_' . sanitize_key( $this->name ) ), time() );
-        } else if ( isset( $_GET[ 'udan-dismiss-warning' . sanitize_key( $this->name ) ] ) ) {
-          update_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ), time() );
-        } else if ( isset( $_GET[ 'udan-dismiss-error' . sanitize_key( $this->name ) ] ) ) {
-          update_option( ( 'dismissed_error_' . sanitize_key( $this->name ) ), time() );
-        }
-      }
-      
-      /**
        * Renders admin notes in case there are errors or notices on bootstrap init
        *
        * @author peshkov@UD
@@ -170,13 +152,6 @@ namespace UsabilityDynamics\WP {
         if( TGM_Plugin_Activation::get_instance()->is_tgmpa_page() ) {
           return;
         }
-
-        //enqueue dismiss js for ajax requests
-        $script_path = Utility::path( 'static/scripts/ud-dismiss.js', 'url' );
-        wp_enqueue_script( "ud-dismiss", $script_path, array( 'jquery' ) );
-        wp_localize_script( "ud-dismiss", "_ud_vars", array(
-            "ajaxurl" => admin_url( 'admin-ajax.php' ),
-        ) );
         
         $errors = apply_filters( 'ud:errors:admin_notices', $this->errors, $this->args );
         $messages = apply_filters( 'ud:messages:admin_notices', $this->messages, $this->args );
@@ -198,7 +173,8 @@ namespace UsabilityDynamics\WP {
 
         //** Determine if warning has been dismissed */
         $warning_dismissed = get_option( ( 'dismissed_warning_' . sanitize_key( $this->name ) ) );
-        if ( $this->check_dismiss_time( $warning_dismissed ) && ! empty( $warnings ) && is_array( $warnings ) ) {
+        $show_warnings = $this->check_dismiss_time( $warning_dismissed );
+        if ( $show_warnings && ! empty( $warnings ) && is_array( $warnings ) ) {
           //** Warnings Block */
           $message = '<ul style="list-style:disc inside;"><li>' . implode( '</li><li>', $warnings ) . '</li></ul>';
           $message = sprintf( __( '<p><b>%s</b> has the following warnings:</p> %s', $this->domain ), $this->name, $message );
@@ -229,6 +205,15 @@ namespace UsabilityDynamics\WP {
             echo '<div class="ud-admin-notice updated fade" style="padding:11px;">' . $message . '</div>';
           }
         }
+
+        if ( $show_warnings || empty( $message_dismissed ) ) {
+          //enqueue dismiss js for ajax requests
+          $script_path = Utility::path( 'static/scripts/ud-dismiss.js', 'url' );
+          wp_enqueue_script( "ud-dismiss", $script_path, array( 'jquery' ) );
+          wp_localize_script( "ud-dismiss", "_ud_vars", array(
+              "ajaxurl" => admin_url( 'admin-ajax.php' ),
+          ) );
+        }
         
       }
 
@@ -237,20 +222,22 @@ namespace UsabilityDynamics\WP {
        * @throws \Exception
        */
       public function dismiss_notices(){
-        if( empty($_POST) ){
-          throw new \Exception( 'Invalid Arguments' );
-        }
+        $response = array(
+          'success' => '0',
+          'error' => __( 'There was an error in request.', $this->domain ),
+        );
+        $error = false;
 
         if( empty($_POST['key']) ) {
-          throw new \Exception( 'Invalid key' );
+          $response['error'] = __( 'Invalid key', $this->domain );
+          $error = true;
         }
 
-        update_option( ( $_POST['key'] ), time() );
+        if ( ! $error && update_option( ( $_POST['key'] ), time() ) ) {
+          $response['success'] = '1';
+        }
 
-        wp_send_json( array(
-                'success' => '1',
-            )
-        );
+        wp_send_json( $response );
       }
 
       /**
