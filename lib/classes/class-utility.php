@@ -68,11 +68,7 @@ namespace UsabilityDynamics\WP {
             $path = get_template_directory_uri() . $p;
             break;
           case 'stylesheet':
-            $s = str_replace( wp_normalize_path( ABSPATH ), '', get_stylesheet_directory() );
-            $s = str_replace( '/', '\/', $s );
-            $reg = '|^(.)*(' . $s . ')(.*)$|';
-            $p = preg_replace( $reg, '$3', wp_normalize_path( dirname( __FILE__ ) ) );
-            $path = get_stylesheet_directory_uri() . $p;
+            $path = WP_CONTENT_URL . str_replace( wp_normalize_path( WP_CONTENT_DIR ), '', wp_normalize_path( dirname( __FILE__ ) ) );
             break;
         }
         return $path;
