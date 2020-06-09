@@ -17,7 +17,7 @@ namespace UsabilityDynamics\WP {
      * @author: peshkov@UD
      */
     class Bootstrap extends Scaffold {
-    
+
       /**
        * Schemas
        *
@@ -26,7 +26,7 @@ namespace UsabilityDynamics\WP {
        * @var array
        */
       public $schema = null;
-      
+
       /**
        * Absolute path to schema ( composer.json )
        *
@@ -35,7 +35,7 @@ namespace UsabilityDynamics\WP {
        * @var array
        */
       public $schema_path = null;
-      
+
       /**
        * Admin Notices handler object
        *
@@ -44,7 +44,7 @@ namespace UsabilityDynamics\WP {
        * @var object UsabilityDynamics\WP\Errors object
        */
       public $errors = false;
-      
+
       /**
        * Settings
        *
@@ -54,7 +54,7 @@ namespace UsabilityDynamics\WP {
        * @type \UsabilityDynamics\Settings object
        */
       public $settings = null;
-      
+
       /**
        * Path to main plugin/theme file
        *
@@ -63,7 +63,7 @@ namespace UsabilityDynamics\WP {
        * @var array
        */
       public $boot_file = false;
-      
+
       /**
        * Constructor
        * Attention: MUST NOT BE CALLED DIRECTLY! USE get_instance() INSTEAD!
@@ -93,7 +93,7 @@ namespace UsabilityDynamics\WP {
         }
         add_action( 'wp_ajax_ud_bootstrap_dismiss_notice', array( $this, 'ud_bootstrap_dismiss_notice' ) );
       }
-      
+
       /**
        * Initialize application.
        * Redeclare the method in final class!
@@ -101,7 +101,7 @@ namespace UsabilityDynamics\WP {
        * @author peshkov@UD
        */
       public function init() {}
-      
+
       /**
        * Determine if errors exist
        * Just wrapper.
@@ -109,7 +109,7 @@ namespace UsabilityDynamics\WP {
       public function has_errors() {
         return $this->errors->has_errors();
       }
-      
+
       /**
        * @param string $key
        * @param mixed $value
@@ -137,7 +137,7 @@ namespace UsabilityDynamics\WP {
         }
         return $this->settings->get( $key, $default );
       }
-      
+
       /**
        * Returns specific schema from composer.json file.
        *
@@ -167,13 +167,13 @@ namespace UsabilityDynamics\WP {
             $p = strtok( '.' );
           }
           return $current;
-        } 
+        }
         //** Get default key */
         else {
           return isset( $this->schema[ $key ] ) ? $this->schema[ $key ] : false;
         }
       }
-      
+
       /**
        * Return localization's list.
        *
@@ -222,7 +222,7 @@ namespace UsabilityDynamics\WP {
 
       /**
        * Saving version no to database.
-       * 
+       *
        */
       public function save_version_no($value=''){
         update_option( $this->slug . '-current-version', $this->args['version'] );
@@ -410,7 +410,7 @@ namespace UsabilityDynamics\WP {
        *
        */
       public function render_upgrade_notice() {
-        
+
         if( $this->type == 'theme' ) {
           if( !current_user_can( 'switch_themes' ) ) {
             return;
@@ -436,6 +436,7 @@ namespace UsabilityDynamics\WP {
           'home_link' => !empty( $this->schema[ 'homepage' ] ) ? $this->schema[ 'homepage' ] : false,
         ) );
         extract( $vars );
+        require( dirname( dirname( __DIR__ ) ) . '/static/views/install_notice.php' );
         $content = ob_get_clean();
         echo apply_filters( 'ud::bootstrap::upgrade_notice::template', $content, $this->slug, $vars );
       }
@@ -495,19 +496,19 @@ namespace UsabilityDynamics\WP {
           }
         }
       }
-      
+
       /**
        * Determine if plugin/theme requires or recommends another plugin(s)
        *
        * @author peshkov@UD
        */
       private function plugins_dependencies() {
-        /** 
+        /**
          * Dependencies must be checked before plugins_loaded hook to prevent issues!
-         * 
+         *
          * The current condition fixes incorrect behaviour on custom 'Install Plugins' page
          * after activation plugin which has own dependencies.
-         * 
+         *
          * The condition belongs to WordPress 4.3 and higher.
          */
         if( did_action( 'plugins_loaded' ) && $this->type == 'plugin' ) {
@@ -524,8 +525,8 @@ namespace UsabilityDynamics\WP {
           $this->is_tgma = true;
         }
       }
-      
-      
+
+
       /**
        * Defines License Client if 'licenses' schema is set
        *
@@ -546,6 +547,13 @@ namespace UsabilityDynamics\WP {
           $this->errors->add( __( 'Class \UsabilityDynamics\UD_API\Bootstrap does not exist. Be sure all required plugins and (or) composer modules installed and activated.', $this->domain ) );
           return false;
         }
+
+        /**
+         * add-ons for products
+         * author palant@ud
+         */
+        $addons = $this->get_schema( 'extra.schemas.addons' );
+
         $args = $this->args;
         $args = array_merge( $args, array(
           'type' => $this->type,
@@ -554,13 +562,14 @@ namespace UsabilityDynamics\WP {
           'referrer_slug' => $this->slug,
           'domain' => $this->domain,
           'errors_callback' => array( $this->errors, 'add' ),
+          'addons' => $addons
         ), $schema );
         if( empty( $args[ 'screen' ] ) ) {
           $this->errors->add( __( 'Licenses client can not be activated due to invalid \'licenses\' schema.', $this->domain ) );
         }
         $this->client = new \UsabilityDynamics\UD_API\Bootstrap( $args );
       }
-      
+
       /**
        * Defines License Manager if 'license' schema is set
        *
@@ -596,33 +605,33 @@ namespace UsabilityDynamics\WP {
 
       public function ud_bootstrap_dismiss_notice() {
         $response = array(
-            'success' => '0',
-            'error' => __( 'There was an error in request.', $this->domain ),
+          'success' => '0',
+          'error' => __( 'There was an error in request.', $this->domain ),
         );
         $error = false;
 
         if( empty( $_POST['key'] ) ||
-            empty( $_POST['slug'] ) ||
-            empty( $_POST['type'] ) ||
-            empty( $_POST['version'] )
+          empty( $_POST['slug'] ) ||
+          empty( $_POST['type'] ) ||
+          empty( $_POST['version'] )
         ) {
           $response['error'] = __( 'Invalid values', $this->domain );
           $error = true;
         }
 
         if ( ! $error && update_option( ( $_POST['key'] ), array(
-                'slug' => $_POST['slug'],
-                'type' => $_POST['type'],
-                'version' => $_POST['version'],
-            ) ) ) {
+            'slug' => $_POST['slug'],
+            'type' => $_POST['type'],
+            'version' => $_POST['version'],
+          ) ) ) {
           $response['success'] = '1';
         }
 
         wp_send_json( $response );
       }
-      
+
     }
-  
+
   }
-  
+
 }
