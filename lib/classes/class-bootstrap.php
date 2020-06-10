@@ -436,7 +436,6 @@ namespace UsabilityDynamics\WP {
           'home_link' => !empty( $this->schema[ 'homepage' ] ) ? $this->schema[ 'homepage' ] : false,
         ) );
         extract( $vars );
-        require( dirname( dirname( __DIR__ ) ) . '/static/views/install_notice.php' );
         $content = ob_get_clean();
         echo apply_filters( 'ud::bootstrap::upgrade_notice::template', $content, $this->slug, $vars );
       }
@@ -547,13 +546,6 @@ namespace UsabilityDynamics\WP {
           $this->errors->add( __( 'Class \UsabilityDynamics\UD_API\Bootstrap does not exist. Be sure all required plugins and (or) composer modules installed and activated.', $this->domain ) );
           return false;
         }
-
-        /**
-         * add-ons for products
-         * author palant@ud
-         */
-        $addons = $this->get_schema( 'extra.schemas.addons' );
-
         $args = $this->args;
         $args = array_merge( $args, array(
           'type' => $this->type,
@@ -562,7 +554,6 @@ namespace UsabilityDynamics\WP {
           'referrer_slug' => $this->slug,
           'domain' => $this->domain,
           'errors_callback' => array( $this->errors, 'add' ),
-          'addons' => $addons
         ), $schema );
         if( empty( $args[ 'screen' ] ) ) {
           $this->errors->add( __( 'Licenses client can not be activated due to invalid \'licenses\' schema.', $this->domain ) );
